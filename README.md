@@ -1,327 +1,292 @@
 # AI Agent Platform for Hiền Hựu Bus Customer Service & Operations
 
-> Multi-Agent AI System for Customer Service, Ticket Booking & Complaint Handling
+> Hệ thống AI Agent đa tác tử cho chăm sóc khách hàng, đặt vé & xử lý khiếu nại / Multi-Agent AI System for Customer Service, Ticket Booking & Complaint Handling
 
 ---
 
-## Table of Contents
+## Mục lục / Table of Contents
 
-1. [Overview](#overview)
-2. [Problem](#problem)
-3. [Why Multi-Agent?](#why-multi-agent)
-4. [Product Flow](#product-flow)
-5. [Architecture](#architecture)
-6. [Agents](#agents)
-   - [Chief Agent](#chief-agent)
-   - [Booking Agent](#booking-agent)
-   - [Complaint Agent](#complaint-agent)
-   - [Payment Agent](#payment-agent)
-7. [Agents vs Tools](#agents-vs-tools)
-8. [Shared Capabilities](#shared-capabilities)
-   - [RAG / Knowledge Base](#rag--knowledge-base)
-   - [Shared State](#shared-state)
-   - [Human-in-the-Loop](#human-in-the-loop)
-9. [Core Workflows](#core-workflows)
-   - [Booking Workflow](#booking-workflow)
-   - [Complaint Workflow](#complaint-workflow)
-   - [Payment Workflow](#payment-workflow)
+1. [Tổng quan](#tổng-quan)
+2. [Vấn đề](#vấn-đề)
+3. [Tại sao Multi-Agent?](#tại-sao-multi-agent)
+4. [Luồng sản phẩm](#luồng-sản-phẩm)
+5. [Kiến trúc](#kiến-trúc)
+6. [Các Agent](#các-agent)
+7. [Agent vs Tools](#agent-vs-tools)
+8. [Khả năng dùng chung](#khả-năng-dùng-chung)
+9. [Luồng nghiệp vụ](#luồng-nghiệp-vụ)
 10. [Business State](#business-state)
-11. [Key Features](#key-features)
+11. [Tính năng chính](#tính-năng-chính)
 12. [Tech Stack](#tech-stack)
 13. [Demo](#demo)
-14. [Project Structure](#project-structure)
+14. [Cấu trúc dự án](#cấu-trúc-dự-án)
 15. [API](#api)
-16. [Configuration](#configuration)
+16. [Cấu hình](#cấu-hình)
 17. [Quick Start](#quick-start)
-18. [Roadmap](#roadmap)
-19. [Documentation](#documentation)
+18. [Lộ trình](#lộ-trình)
+19. [Tài liệu](#tài-liệu)
 20. [License](#license)
 
 ---
 
-## Overview
+## Tổng quan / Overview
 
-This project is a **domain-specific AI Agent platform** designed for **Hiền Hựu Bus**.
+**AI Multi-Agent Operations Assistant** cho Nhà xe Hiền Hựu.
 
-The system automates customer service operations for the Hanoi ↔ Tà Xùa route, including:
+Hệ thống tự động hóa hoạt động CSKH và vận hành cho doanh nghiệp một người:
 
-| Domain | Description |
-|--------|-------------|
-| **Customer Service** | Answer questions about schedules, routes, vehicle types, pickup/drop-off |
-| **Trip Information** | Provide current trip schedules and availability |
-| **Ticket Booking** | Search trips, check seats, create bookings |
-| **Payment Processing** | Process payments and confirm bookings |
-| **Complaint Handling** | Receive, classify, and resolve customer complaints |
+| Nghiệp vụ / Domain | Mô tả / Description |
+|---------------------|----------------------|
+| **Chăm sóc khách hàng / Customer Service** | Tra cứu thông tin nhà xe, lịch trình, dịch vụ |
+| **Thông tin chuyến / Trip Information** | Tìm chuyến, kiểm tra ghế |
+| **Đặt vé / Ticket Booking** | Đặt vé, giữ ghế, xác nhận |
+| **Thanh toán / Payment** | Thanh toán, theo dõi trạng thái |
+| **Xử lý khiếu nại / Complaint Handling** | Tiếp nhận, phân loại, xử lý khiếu nại |
 
-### What This Is NOT
+### Đây KHÔNG phải là chatbot đơn thuần / What This Is NOT
 
-This is **not just a conversational chatbot**.
+Đây **không chỉ là chatbot trả lời câu hỏi**:
 
 ```
-Customer Request
+Yêu cầu khách hàng / Customer Request
         ↓
-Chief Agent (Orchestrator)
+Chief Agent (Điều phối viên)
         ↓
-Specialist Agent
+Agent chuyên biệt / Specialist Agent
         ↓
-Tools / Knowledge Base / Database
+Tools / RAG / Database
         ↓
-Validation
+Xác thực / Validation
         ↓
-Human Approval (when required)
+Phê duyệt Human (nếu cần) / Human Approval (when required)
         ↓
-Business Action
+Hành động nghiệp vụ / Business Action
         ↓
-Updated State
+Cập nhật State
 ```
 
-The system executes **real business workflows** — not just generating text responses.
+Hệ thống thực hiện **luồng nghiệp vụ thực tế** — không chỉ sinh text.
+
+### 4 Tiêu chí chính / Four Key Criteria
+
+| # | Tiêu chí | Criteria | Mô tả / Description |
+|---|----------|----------|----------------------|
+| 1 | Bot làm việc thật | Bot works for real | Multi-step, gọi tool, quản lý state |
+| 2 | Phối hợp | Coordination | Nhiều agent handoff kèm context |
+| 3 | Quản trị mặc định | Default governance | Action rủi ro cần duyệt + audit |
+| 4 | Đích đến | Complete journey | Chat → Handoff → Work → Approve → Audit |
 
 ---
 
-## Problem
+## Vấn đề / Problem
 
-### Customer Service Challenges
+### Pain Points
 
-| Challenge | Impact |
-|-----------|--------|
-| Repeated questions about schedules, prices, pickup points | Staff time spent on manual lookups |
-| Customer requests arriving through multiple channels | Inconsistent responses |
-| Manual information retrieval | Slow response times, potential errors |
+Với mô hình doanh nghiệp một người, chủ nhà xe phải đồng thời:
 
-### Ticket Booking Challenges
+| Nhóm / Category | Công việc / Tasks |
+|-----------------|-------------------|
+| **CSKH / Customer Service** | Tư vấn, tra cứu lịch/chuyến, giá, ghế |
+| **Đặt vé / Booking** | Đặt vé, theo dõi thanh toán, tra cứu booking |
+| **Khiếu nại / Complaints** | Xử lý khiếu nại, yêu cầu hoàn tiền |
 
-| Challenge | Impact |
-|-----------|--------|
-| Collecting multiple pieces of information | Multi-step manual process |
-| Checking trip availability and seats | Manual coordination required |
-| Manual booking entry | Risk of incorrect information |
+Công việc lặp lại chiếm thời gian, trong khi nghiệp vụ quan trọng cần chủ doanh nghiệp quyết định.
 
-### Complaint Handling Challenges
-
-| Challenge | Impact |
-|-----------|--------|
-| Various complaint types (pickup, booking, seat, service) | Requires context retrieval |
-| Need to verify booking before resolution | Multiple system lookups |
-| Sensitive cases requiring human judgment | Cannot be fully automated |
-
----
-
-## Why Multi-Agent?
-
-| Concern | Single Agent | Multi-Agent |
-|---------|--------------|-------------|
-| **Domain separation** | Mixed logic | Specialist agents per business domain |
-| **Booking vs Complaint** | Overlapping rules | Clear responsibility boundaries |
-| **Payment flow** | Confused with other intents | Downstream specialist |
-| **Scalability** | Complex when adding features | Add agents without rewriting |
-| **Maintainability** | Prompt engineering bottlenecks | Isolated agent responsibilities |
-| **Controllability** | Hard to audit | Clear delegation & validation |
-
-**The goal is not to create many agents, but to separate distinct business responsibilities.**
-
-- **Chief Agent** handles orchestration (understand, plan, route, validate)
-- **Booking Agent** handles ticket booking operations
-- **Complaint Agent** handles customer complaints
-- **Payment Agent** handles payment processing (downstream)
-
----
-
-## Product Flow
+### Giải pháp / Solution
 
 ```
-Understand
-    ↓
-Plan
-    ↓
-Delegate
-    ↓
-Execute
-    ↓
-Validate
-    ↓
-Human Approval (when required)
-    ↓
-Act
-    ↓
-Update Business State
+Công việc thường xuyên          Nghiệp vụ rủi ro
+        ↓                              ↓
+       AI                              AI
+        ↓                              ↓
+Tự động xử lý              Chủ nhà xe kiểm soát
 ```
-
-Each step:
-
-| Step | Description |
-|------|-------------|
-| **1. Understand** | Parse intent and extract entities from request |
-| **2. Plan** | Determine required specialist agent(s) |
-| **3. Delegate** | Route to appropriate agent with context |
-| **4. Execute** | Agent uses tools, RAG, database |
-| **5. Validate** | Chief Agent validates results |
-| **6. Human Approval** | Triggered for high-risk actions |
-| **7. Act** | Execute business action |
-| **8. Update State** | Persist changes to database |
 
 ---
 
-## Architecture
+## Tại sao Multi-Agent? / Why Multi-Agent?
+
+| Tiêu chí / Concern | Agent đơn lẻ / Single Agent | Multi-Agent |
+|---------------------|------------------------------|-------------|
+| **Tách biệt domain / Domain separation** | Logic lẫn lộn | Agent chuyên biệt theo domain |
+| **Đặt vé vs Khiếu nại / Booking vs Complaint** | Luật chồng chéo | Ranh giới rõ ràng |
+| **Thanh toán / Payment flow** | Lẫn với intent khác | Agent downstream riêng |
+| **Mở rộng / Scalability** | Phức tạp khi thêm feature | Thêm agent không cần viết lại |
+| **Bảo trì / Maintainability** | Prompt phức tạp | Agent có trách nhiệm riêng |
+| **Kiểm soát / Controllability** | Khó audit | Delegation & validation rõ ràng |
+
+**Mục tiêu không phải tạo nhiều agent, mà tách biệt trách nhiệm nghiệp vụ khác nhau.**
+
+---
+
+## Luồng sản phẩm / Product Flow
+
+```
+Hiểu / Understand
+    ↓
+Lập kế hoạch / Plan
+    ↓
+Ủy thác / Delegate
+    ↓
+Thực thi / Execute
+    ↓
+Xác thực / Validate
+    ↓
+Phê duyệt Human / Human Approval (nếu cần)
+    ↓
+Hành động / Act
+    ↓
+Cập nhật State
+```
+
+---
+
+## Kiến trúc / Architecture
 
 ```mermaid
 flowchart TD
-    U[Customer] --> C[Chief Agent]
+    U[Khách hàng / Customer] --> C[Chief Agent]
 
-    C --> B[Booking Agent]
+    C --> B[Booking & Payment Agent]
     C --> CO[Complaint Agent]
-    C --> P[Payment Agent]
 
     B --> BT[Booking Tools]
     CO --> CT[Complaint Tools]
-    P --> PT[Payment Tools]
 
     B --> DB[(PostgreSQL)]
     CO --> DB
-    P --> DB
 
-    CO --> R[RAG / Knowledge Base<br/>Hiền Hựu Service Info]
+    CO --> R[RAG / Knowledge Base<br/>Thông tin Hiền Hựu]
 
-    C --> V[Validation]
+    C --> V[Xác thực / Validation]
 
-    V --> H{Human Approval<br/>Required?}
+    V --> H{Rủi ro cao? / Risk Check?}
 
-    H -->|No| A[Business Action]
-    H -->|Yes| HITL[CSKH Approval]
+    H -->|Không / No| A[Tự động / Auto]
+    H -->|Có / Yes| HITL[Chủ nhà xe duyệt / Owner Approval]
 
-    HITL --> A
-    A --> S[Updated Business State]
+    A --> S[State cập nhật / State Updated]
+    HITL --> S
 ```
 
 ---
 
-## Agents
+## Các Agent / Agents
 
 ### Chief Agent
 
-**Orchestrator** — coordinates the entire workflow.
+**Điều phối viên / Orchestrator** — điều phối toàn bộ workflow.
 
-| Responsibility | Description |
-|----------------|-------------|
-| Understand request | Accept customer input |
-| Detect intent | Identify booking, complaint, payment, FAQ |
-| Delegate task | Route to appropriate Specialist Agent |
-| Coordinate workflow | Manage multi-step processes |
-| Validate results | Check specialist agent outputs |
-| Trigger HITL | Activate human approval when required |
-| Produce final response | Communicate result to customer |
+| Trách nhiệm / Responsibility | Mô tả / Description |
+|-------------------------------|------------------------|
+| Hiểu yêu cầu / Understand request | Tiếp nhận và parse input |
+| Phát hiện intent / Detect intent | Xác định booking, complaint, payment, FAQ |
+| Ủy thác task / Delegate task | Route đến Agent phù hợp |
+| Điều phối workflow / Coordinate | Quản lý các bước |
+| Xác thực kết quả / Validate | Kiểm tra output từ specialist |
+| Trigger HITL | Kích hoạt human approval khi cần |
 
-### Booking Agent
+### Booking & Payment Agent
 
-**Domain: Hiền Hựu Ticket Booking**
+**Domain: Đặt vé & Thanh toán Hiền Hựu**
 
-| Capability | Description |
-|------------|-------------|
-| Search available trips | Find trips by route and date |
-| Check seat availability | Show available seats for selected trip |
-| Select vehicle type | Display Limousine, Cabin options |
-| Collect customer information | Gather passenger details |
-| Create booking draft | Prepare booking for confirmation |
-| Hold seat | Temporarily reserve seat (if supported) |
+| Khả năng / Capability | Mô tả / Description |
+|------------------------|----------------------|
+| Tìm chuyến / Search trips | Tìm chuyến theo tuyến và ngày |
+| Kiểm tra ghế / Check seats | Hiển thị ghế trống |
+| Thu thập thông tin / Collect info | Thu thập thông tin khách |
+| Tạo booking / Create booking | Tạo booking chờ xác nhận |
+| Xử lý thanh toán / Process payment | Workflow thanh toán |
+| Xác nhận booking / Confirm booking | Cập nhật trạng thái |
+
+**Tools:**
+
+```text
+search_trip()          # Tìm chuyến
+get_trip_detail()      # Chi tiết chuyến
+check_available_seats() # Kiểm tra ghế
+hold_seat()            # Giữ ghế
+create_booking()        # Tạo booking
+get_booking()          # Lấy thông tin booking
+create_payment()       # Tạo thanh toán
+check_payment_status()  # Kiểm tra thanh toán
+```
 
 ### Complaint Agent
 
-**Domain: Customer Complaints**
+**Domain: Xử lý khiếu nại / Customer Complaints**
 
-| Capability | Description |
-|------------|-------------|
-| Receive complaint | Accept and classify issue |
-| Identify complaint type | Pickup issue, booking issue, seat/cabin issue, service issue |
-| Retrieve related booking | Fetch booking context |
-| Analyze the issue | Assess severity and impact |
-| Recommend resolution | Suggest appropriate action |
-| Escalate | Route to CSKH when required |
-
-### Payment Agent
-
-**Domain: Payment Processing**
-
-Payment Agent is a **downstream specialist** activated after customer confirms booking.
-
-```
-Customer Booking Request
-        ↓
-Booking Agent
-        ↓
-Booking Draft Created
-        ↓
-Customer Confirms
-        ↓
-Payment Agent Activated
-        ↓
-Payment Processing
-        ↓
-Booking Confirmed
-```
+| Khả năng / Capability | Mô tả / Description |
+|------------------------|----------------------|
+| Tiếp nhận khiếu nại / Receive | Tiếp nhận và phân loại |
+| Tra cứu booking / Retrieve | Lấy thông tin booking liên quan |
+| Phân loại type / Classify type | WRONG_SEAT, LATE, DRIVER, LOST_ITEM, PAYMENT, BOOKING_ERROR, REFUND, OTHER |
+| Đánh giá mức độ / Assess severity | LOW, MEDIUM, HIGH |
+| Đề xuất giải pháp / Recommend | Đề xuất hướng xử lý |
+| Escalate | Chuyển chủ nhà xe khi cần |
 
 ---
 
-## Agents vs Tools
+## Agent vs Tools
 
 ### Agents
 
-Responsible for:
-- **Reasoning** and decision-making
-- **Delegation** and coordination
-- **Workflow** decisions
-- **Domain-specific** task handling
+Chịu trách nhiệm cho:
+- **Reasoning** — suy luận và quyết định
+- **Delegation** — ủy thác và điều phối
+- **Workflow decisions** — quyết định luồng xử lý
+- **Domain-specific** — xử lý nghiệp vụ riêng
 
 ### Tools
 
-Responsible for **deterministic operations**:
+Chịu trách nhiệm cho các thao tác **xác định (deterministic)**:
 
 | Domain | Operations |
 |--------|------------|
-| **Booking Tools** | `search_trip`, `check_seat`, `hold_seat`, `create_booking`, `get_booking` |
-| **Payment Tools** | `create_payment`, `check_payment`, `confirm_payment` |
-| **Complaint Tools** | `create_complaint`, `get_complaint`, `update_complaint` |
-| **Search Tool** | Semantic search over knowledge base |
+| **Đặt vé / Booking** | `search_trip`, `check_seat`, `hold_seat`, `create_booking` |
+| **Thanh toán / Payment** | `create_payment`, `check_payment`, `confirm_payment` |
+| **Khiếu nại / Complaint** | `create_complaint`, `get_complaint`, `update_complaint` |
 
-Tools execute actions; they do not reason.
+Tools thực hiện action; chúng không suy luận.
 
 ---
 
-## Shared Capabilities
+## Khả năng dùng chung / Shared Capabilities
 
 ### RAG / Knowledge Base
 
-**RAG is a shared capability, NOT an agent.**
+**RAG là capability dùng chung, KHÔNG PHẢI agent.**
 
-Used by agents to retrieve approved information about Hiền Hựu services:
+Dùng để truy xuất thông tin được phê duyệt:
 
-| Information Type | Example |
-|-----------------|---------|
-| Vehicle types | Limousine, Cabin |
-| Service areas | Hanoi ↔ Tà Xùa route |
-| Pickup/drop-off | Pickup points, drop-off locations |
-| General booking info | Booking process, requirements |
-| Policies | Terms of service, complaint policies |
+| Loại thông tin / Information Type | Ví dụ / Example |
+|----------------------------------|-----------------|
+| Loại xe / Vehicle types | Limousine, Cabin |
+| Khu vực dịch vụ / Service areas | Tuyến Hà Nội ↔ Tà Xùa |
+| Điểm đón/trả / Pickup/drop-off | Điểm đón, điểm trả |
+| Chính sách / Policies | Chính sách hoàn, hủy |
+| FAQ | Câu hỏi thường gặp |
 
-**Important:** RAG provides knowledge retrieval; it does not replace transactional tools.
+**Quan trọng:** RAG truy xuất knowledge; không thay thế tools giao dịch.
 
 ```
-"What time does the bus leave?"
+"Câu hỏi về lịch trình?"
 → Knowledge Base / Trip Data Tool
 
-"I want to book 2 tickets."
-→ Booking Agent + Booking Tools
+"Đặt 2 vé."
+→ Booking Agent + Tools
 ```
 
 ### Shared State
 
-Agents share context throughout a workflow:
+Agents chia sẻ context trong suốt workflow:
 
 ```json
 {
   "user_id": "...",
   "intent": "booking",
-  "origin": "Hanoi",
-  "destination": "Ta Xua",
+  "origin": "Hà Nội / Hanoi",
+  "destination": "Tà Xùa / Ta Xua",
   "travel_date": "2026-09-20",
   "quantity": 2,
   "trip_id": "...",
@@ -336,121 +301,116 @@ Agents share context throughout a workflow:
 
 ### Human-in-the-Loop
 
-**HITL is a conditional control gate** for sensitive or high-risk actions.
+**HITL là cổng kiểm soát có điều kiện** cho các action nhạy cảm.
 
-Not every workflow requires human approval.
-
-```mermaid
-flowchart TD
-    A[Agent Decision] --> Q{Approval Required?}
-
-    Q -->|No| B[Execute Action]
-    Q -->|Yes| C[CSKH Review]
-    C --> D{Approved?}
-
-    D -->|Yes| B
-    D -->|No| E[Reject / Modify]
-```
-
-| Trigger | Example |
-|---------|---------|
-| Refund requests | Customer asks for refund |
-| Booking cancellation | Special cancellation requests |
-| Complaint escalation | High-severity complaints |
-| Out-of-policy actions | Unusual customer requests |
+| AI tự động / AI can do | Cần duyệt / Owner must approve |
+|-------------------------|-------------------------------|
+| FAQ, tra cứu thông tin | Hoàn tiền / Refunds |
+| Kiểm tra chuyến, ghế | Khiếu nại nghiêm trọng |
+| Tạo booking | Request ngoài policy |
+| Phân loại khiếu nại | Action tài chính |
 
 ---
 
-## Core Workflows
+## Luồng nghiệp vụ / Core Workflows
 
-### Booking Workflow
+### Luồng đặt vé / Booking Workflow
 
 ```mermaid
 flowchart LR
-    A[Customer] -->|Request| B[Chief]
-    B -->|Delegate| C[Booking Agent]
-    C --> D[Search Trip]
-    D --> E[Check Availability]
-    E --> F[Show Options]
+    A[Khách / Customer] -->|Yêu cầu / Request| B[Chief]
+    B -->|Ủy thác / Delegate| C[Booking Agent]
+    C --> D[Tìm chuyến / Search Trip]
+    D --> E[Kiểm tra ghế / Check Seats]
+    E --> F[Hiển thị options]
     F --> A
-    A -->|Select| G[Collect Info]
-    G --> H[Create Booking Draft]
-    H --> I[Customer Confirm]
-    I --> J[Payment Agent]
-    J --> K[Process Payment]
-    K --> L{Success?}
-    L -->|Yes| M[Confirm Booking]
-    L -->|No| N[Retry]
-    M --> O[Business State Updated]
+    A -->|Chọn / Select| G[Thu thập info]
+    G --> H[Tạo Booking]
+    H --> I[Khách xác nhận / Confirm]
+    I --> J[Thanh toán / Payment]
+    J --> K{Kiểm tra / Check}
+    K -->|Thành công / Success| L[Xác nhận / Confirm]
+    K -->|Thất bại / Fail| M[Thử lại / Retry]
+    L --> N[State cập nhật]
 ```
 
-### Complaint Workflow
+### Luồng khiếu nại / Complaint Workflow
 
 ```mermaid
 flowchart TD
-    A[Customer] -->|Complaint| B[Chief]
-    B -->|Delegate| C[Complaint Agent]
-    C --> D[Retrieve Booking]
-    D --> E[Analyze Issue]
-    E --> F{Type?}
-    F -->|Simple| G[Auto Resolution]
-    F -->|Complex| H[CSKH Review]
-    G --> I[Update State]
-    H --> J{Approved?}
-    J -->|Yes| K[Execute Resolution]
-    J -->|No| L[Reject]
+    A[Khách] -->|Khiếu nại| B[Chief]
+    B -->|Ủy thác| C[Complaint Agent]
+    C --> D[Lấy Booking]
+    D --> E[Phân loại]
+    E --> F{Đánh giá mức độ}
+    F -->|Thấp / Low| G[Tự xử lý]
+    F -->|Cao / High| H[Chủ nhà xe duyệt]
+    G --> I[Cập nhật State]
+    H --> J{Duyệt?}
+    J -->|Có| K[Thực thi]
+    J -->|Không| L[Từ chối]
     K --> I
-    I --> M[Notify Customer]
+    I --> M[Thông báo]
 ```
 
-### Payment Workflow
-
-Payment is a **downstream workflow** triggered after customer confirms booking:
+### Luồng hoàn tiền / Refund Flow
 
 ```
-Booking Draft Created
+Khách yêu cầu hoàn tiền
         ↓
-Customer Confirms
+Complaint Agent
         ↓
-Payment Agent Activated
+get_booking() + RAG: refund_policy
         ↓
-Payment Processing
+Kiểm tra điều kiện
         ↓
-Verify Payment
+Tạo Refund Request
         ↓
-Confirm Booking → CONFIRMED
+⚠️ Human Approval
+        ↓
+Chủ nhà xe xem xét
+        ↓
+Thực hiện hoàn tiền (bên ngoài)
+        ↓
+Cập nhật Database: REFUNDED
+        ↓
+Audit Log
+        ↓
+Thông báo khách
 ```
+
+**Lưu ý:** AI **không trực tiếp chuyển tiền**. AI tạo, theo dõi và cập nhật request; chủ nhà xe thực hiện giao dịch thực tế.
 
 ---
 
 ## Business State
 
-The agents operate on business state through controlled tools instead of only generating text.
+Agents vận hành trên business state thông qua các tools được kiểm soát.
 
-| Entity | Description |
-|--------|-------------|
-| **Customer** | Passenger information |
-| **Route** | Origin-destination pairs (e.g., Hanoi ↔ Tà Xùa) |
-| **Trip** | Scheduled journey with time, vehicle type |
-| **Vehicle** | Bus type (Limousine, Cabin) |
-| **Seat** | Individual seat with status |
-| **Booking** | Ticket reservation record |
-| **Payment** | Transaction record |
-| **Complaint** | Customer issue record |
+| Entity | Mô tả |
+|--------|--------|
+| **Customer** | Thông tin khách |
+| **Route** | Tuyến đi (Hà Nội ↔ Tà Xùa) |
+| **Trip** | Chuyến xe với giờ, loại xe |
+| **Vehicle** | Loại xe (Limousine, Cabin) |
+| **Seat** | Ghế với trạng thái |
+| **Booking** | Bản ghi đặt vé |
+| **Payment** | Bản ghi thanh toán |
+| **Complaint** | Bản ghi khiếu nại |
 
 ---
 
-## Key Features
+## Tính năng chính / Key Features
 
-| Capability | Description |
-|------------|-------------|
-| Intent Detection | Routes requests to appropriate workflows |
-| Multi-Agent Handoff | Enables specialist delegation |
-| Tool Calling | Executes business operations |
-| RAG | Retrieves approved Hiền Hựu service information |
-| HITL | Controls sensitive actions |
-| Shared State | Maintains workflow context |
-| Agent Run Trace | Tracks execution for audit |
+| Tính năng / Feature | Mô tả / Description |
+|---------------------|----------------------|
+| Intent Detection | Định tuyến request đến workflow phù hợp |
+| Multi-Agent Handoff | Ủy thác cho specialist kèm context |
+| Tool Calling | Thực thi nghiệp vụ |
+| RAG | Truy xuất thông tin Hiền Hựu |
+| HITL | Kiểm soát action nhạy cảm |
+| Shared State | Duy trì context xuyên suốt workflow |
+| Audit Log | Theo dõi execution |
 
 ---
 
@@ -460,7 +420,7 @@ The agents operate on business state through controlled tools instead of only ge
 
 | Component | Technology |
 |-----------|------------|
-| Language | Python 3.11+ |
+| Ngôn ngữ / Language | Python 3.11+ |
 | Framework | FastAPI |
 | Agent Framework | LangGraph |
 
@@ -470,7 +430,7 @@ The agents operate on business state through controlled tools instead of only ge
 |-----------|------------|
 | LLM | OpenAI GPT-4 / Anthropic Claude |
 | Embeddings | OpenAI Embeddings |
-| RAG | Semantic search with vector database |
+| RAG | Semantic search với pgvector |
 
 ### Database
 
@@ -491,71 +451,61 @@ The agents operate on business state through controlled tools instead of only ge
 | Component | Technology |
 |-----------|------------|
 | Container | Docker |
-| Database | Docker Compose (PostgreSQL + pgvector) |
+| Database | Docker Compose |
 
 ---
 
 ## Demo
 
 ```
-Customer:
-"I want to book 2 tickets from Hanoi to Ta Xua."
+Khách hàng:
+"Tôi muốn đặt 2 vé Hà Nội đi Tà Xùa."
 
 Chief Agent:
-→ Detects: booking intent
-→ Entities: origin=Hanoi, destination=Ta Xua, quantity=2
-→ Delegates to Booking Agent
+→ Phát hiện: booking intent
+→ Entities: origin=Hà Nội, destination=Tà Xùa, quantity=2
+→ Ủy thác cho Booking Agent
 
 Booking Agent:
-→ search_trip(origin="Hanoi", destination="Ta Xua")
+→ search_trip(origin="Hà Nội", destination="Tà Xùa")
 → check_available_seats(trip_id="...")
-→ Returns available trips and seats
+→ Kết quả: chuyến 20:00, ghế A05, A06 trống
 
 Chief Agent:
-→ "Found available trips for Hanoi to Ta Xua.
-   Would you like to see the options?"
+→ "Có chuyến 20:00 với ghế A05, A06. Đặt không?"
 
-Customer:
-"Yes, show me."
-
-Booking Agent:
-→ Returns trip options with vehicle types and schedules
-
-Customer:
-"I want to book the first one."
+Khách:
+"Đặt."
 
 Booking Agent:
-→ hold_seat(trip_id="...", seats=["A1", "A2"])
+→ hold_seat(trip_id="...", seats=["A05", "A06"])
 → create_booking(customer_info={...})
-→ Returns booking draft
+→ Kết quả: booking_id="BK001", status=BOOKING_DRAFT
 
 Chief Agent:
-→ "Booking created. Total: [amount]. Proceed to payment?"
+→ "Booking BK001 đã tạo. Chuyển thanh toán?"
 
-Customer:
-"Confirm."
+Khách:
+"Xác nhận."
 
-Chief Agent:
-→ Delegates to Payment Agent
-
-Payment Agent:
-→ create_payment(booking_id="...")
+Booking Agent:
+→ create_payment(booking_id="BK001", amount=...)
 → check_payment_status(booking_id="...")
-→ Returns payment status
+→ Kết quả: PAID
 
 Chief Agent:
-→ "Payment received. Booking confirmed!"
+→ "Thanh toán thành công. Booking BK001 xác nhận!"
 
 Final State:
-→ booking_id: [id]
+→ booking_id: BK001
 → booking_status: CONFIRMED
 → payment_status: PAID
-→ seats: [selected seats]
+→ seats: A05, A06
 ```
 
 ---
 
-## Project Structure
+## Cấu trúc dự án / Project Structure
 
 ```
 ai-agent-customer-service/
@@ -563,111 +513,74 @@ ai-agent-customer-service/
 ├── backend/
 │   ├── src/
 │   │   ├── agent/
-│   │   │   ├── chief.py           # Chief Agent (Orchestrator)
-│   │   │   ├── booking.py         # Booking Agent
+│   │   │   ├── chief.py           # Chief Agent
+│   │   │   ├── booking.py         # Booking & Payment Agent
 │   │   │   ├── complaint.py       # Complaint Agent
-│   │   │   ├── payment.py         # Payment Agent
-│   │   │   ├── state.py           # Shared state management
+│   │   │   ├── state.py           # Shared state
 │   │   │   └── executor.py        # Agent executor
 │   │   │
 │   │   ├── tools/
-│   │   │   ├── booking_tools.py   # search_trip, check_seat, hold_seat, create_booking
-│   │   │   ├── payment_tools.py   # create_payment, check_payment, confirm_payment
-│   │   │   ├── complaint_tools.py # create_complaint, get_complaint, update_complaint
-│   │   │   └── search.py          # RAG semantic search
+│   │   │   ├── booking_tools.py   # Booking operations
+│   │   │   ├── payment_tools.py   # Payment operations
+│   │   │   ├── complaint_tools.py # Complaint operations
+│   │   │   └── search.py          # RAG search
 │   │   │
 │   │   ├── models/
-│   │   │   ├── llm_client.py      # LLM provider abstraction (OpenAI, Anthropic)
-│   │   │   └── embeddings.py       # Text embeddings
-│   │   │
 │   │   ├── prompts/
-│   │   │   ├── chief_prompts.py   # Chief Agent prompts
-│   │   │   └── agent_prompts.py    # Specialist Agent prompts
-│   │   │
 │   │   ├── utils/
-│   │   │   ├── config.py           # Environment settings
-│   │   │   └── logger.py           # Structured logging
-│   │   │
 │   │   └── api/
-│   │       ├── routes.py           # FastAPI endpoints
-│   │       └── schemas.py           # Pydantic models
 │   │
 │   ├── tests/
-│   │   ├── unit/
-│   │   └── integration/
-│   │
 │   ├── requirements.txt
-│   ├── .env.example
-│   └── main.py                     # Entry: uvicorn main:app --reload
+│   └── main.py
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── app/                    # Next.js app router
-│   │   │   ├── page.tsx           # Home page
-│   │   │   ├── layout.tsx         # Root layout
-│   │   │   └── globals.css         # Global styles
-│   │   ├── components/             # Reusable UI components
-│   │   ├── features/               # Feature modules
-│   │   │   ├── chat/              # Chat interface
-│   │   │   ├── booking/           # Booking UI
-│   │   │   └── complaints/        # Complaints UI
-│   │   ├── services/              # API services
-│   │   └── utils/                 # Helpers
-│   │
-│   ├── package.json                # Dependencies
-│   ├── tsconfig.json               # TypeScript config
-│   ├── next.config.js              # Next.js config
-│   ├── tailwind.config.js          # Tailwind CSS
-│   ├── postcss.config.js           # PostCSS
-│   └── .env.example
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── features/
+│   │   └── services/
+│   ├── package.json
+│   └── tsconfig.json
 │
 ├── data/
-│   └── knowledge-base/            # RAG documents
-│       ├── pricing.md
-│       ├── policies.md
-│       └── schedules.md
+│   └── knowledge-base/
+│       └── README.md        # Placeholder - cập nhật dữ liệu thực
 │
 ├── docs/
-│   └── database-schema.md          # PostgreSQL schema
 │
-├── docker-compose.yml               # PostgreSQL + pgvector
-├── .gitignore
+├── docker-compose.yml
 ├── README.md
-└── CLAUDE.md
+└── .gitignore
+```
 
 ---
 
 ## API
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/chat` | POST | Send message, receive agent response |
-| `/api/bookings` | GET, POST | List or create bookings |
-| `/api/bookings/{id}` | GET, PUT | Get or update booking |
-| `/api/trips` | GET | Search trips by route and date |
-| `/api/payments` | POST | Create payment |
-| `/api/payments/{id}/confirm` | POST | Confirm payment |
-| `/api/complaints` | GET, POST | List or create complaints |
-| `/api/admin/pending-approvals` | GET | Get pending HITL approvals |
+| Endpoint | Method | Mô tả / Description |
+|----------|--------|---------------------|
+| `/api/chat` | POST | Gửi tin nhắn, nhận phản hồi từ Agent |
+| `/api/bookings` | GET, POST | Liệt kê hoặc tạo booking |
+| `/api/bookings/{id}` | GET, PUT | Lấy hoặc cập nhật booking |
+| `/api/trips` | GET | Tìm chuyến theo tuyến và ngày |
+| `/api/payments` | POST | Tạo thanh toán |
+| `/api/payments/{id}/confirm` | POST | Xác nhận thanh toán |
+| `/api/complaints` | GET, POST | Liệt kê hoặc tạo khiếu nại |
+| `/api/admin/pending-approvals` | GET | Lấy danh sách duyệt |
+| `/api/admin/approvals/{id}` | POST | Xử lý duyệt |
 
 ---
 
-## Configuration
+## Cấu hình / Configuration
 
-Environment variables (see `backend/.env.example`):
+Environment variables (xem `backend/.env.example`):
 
 ```env
-# Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/ai_agent_cs
-
-# LLM
 LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-...
-
-# Embeddings
 EMBEDDING_MODEL=text-embedding-3-small
-
-# App
 SECRET_KEY=your-secret-key
 DEBUG=true
 ```
@@ -676,52 +589,33 @@ DEBUG=true
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 15+ with pgvector
-- Docker (for database)
-
 ### Backend
 
 ```bash
 cd backend
 
-# Create virtual environment
+# Tạo virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # .\venv\Scripts\activate   # Windows
 
-# Install dependencies
+# Cài đặt dependencies
 pip install -r requirements.txt
 
-# Configure environment
+# Cấu hình environment
 cp .env.example .env
-# Edit .env with your database credentials and API keys
 
-# Start server
+# Khởi động server
 uvicorn main:app --reload --port 8000
 ```
-
-API docs available at: http://localhost:8000/docs
 
 ### Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Configure environment
-cp .env.example .env
-
-# Start development server
 npm run dev
 ```
-
-App available at: http://localhost:3000
 
 ### Database (Docker)
 
@@ -731,20 +625,20 @@ docker-compose up -d
 
 ---
 
-## Roadmap
+## Lộ trình / Roadmap
 
 ### Phase 1 — MVP
 
 - [ ] Core Agent architecture (Chief + Specialist Agents)
-- [ ] Booking workflow (search → book → pay → confirm)
-- [ ] Complaint workflow (receive → classify → resolve)
-- [ ] Basic RAG for Hiền Hựu service information
-- [ ] Human-in-the-Loop approval mechanism
-- [ ] API backend
+- [ ] Luồng đặt vé (search → book → pay → confirm)
+- [ ] Luồng khiếu nại (receive → classify → resolve)
+- [ ] Basic RAG cho thông tin Hiền Hựu
+- [ ] Cơ chế Human-in-the-Loop
+- [ ] Audit Log
 
 ### Phase 2 — Customer Service
 
-- [ ] Multi-channel support
+- [ ] Hỗ trợ đa kênh (Web, Zalo, Facebook)
 - [ ] Conversation memory
 - [ ] Customer history
 
@@ -756,15 +650,17 @@ docker-compose up -d
 
 ---
 
-## Documentation
+## Tài liệu / Documentation
 
-- [PRD](PRD%20%E2%80%94%20AI%20Agent%20Customer%20Service%20&%20Ticket%20Booking%20Platform.md) — Detailed product requirements
+- [PRD](PRD%20%E2%80%94%20AI%20Agent%20Customer%20Service%20&%20Ticket%20Booking%20Platform.md) — Product Requirements chi tiết
 
 ---
 
 ## Data Accuracy Notice
 
 > Schedule, pricing, seat availability and pickup/drop-off information may change over time. The AI system should retrieve transactional information from the current business data source or tools rather than relying solely on static knowledge.
+
+> Lịch trình, giá vé, số ghế trống và thông tin điểm đón/trả có thể thay đổi theo thời gian. Hệ thống AI nên truy xuất thông tin giao dịch từ nguồn dữ liệu hiện tại thay vì chỉ dựa vào knowledge base tĩnh.
 
 ---
 
