@@ -1,666 +1,447 @@
-# AI Agent Platform for Hiền Hựu Bus Customer Service & Operations
+# AI20K - Hiền Hựu Bus Customer Service & Operations Platform
 
-> Hệ thống AI Agent đa tác tử cho chăm sóc khách hàng, đặt vé & xử lý khiếu nại / Multi-Agent AI System for Customer Service, Ticket Booking & Complaint Handling
+> Hệ thống AI Multi-Agent hỗ trợ CSKH và vận hành cho Nhà xe Hiền Hựu
+>
+> **MVP Demo** - Chưa tích hợp AI/LLM, tập trung vào REST API và business logic hoàn chỉnh
 
 ---
 
-## Mục lục / Table of Contents
+## Mục lục
 
 1. [Tổng quan](#tổng-quan)
-2. [Vấn đề](#vấn-đề)
-3. [Tại sao Multi-Agent?](#tại-sao-multi-agent)
-4. [Luồng sản phẩm](#luồng-sản-phẩm)
-5. [Kiến trúc](#kiến-trúc)
-6. [Các Agent](#các-agent)
-7. [Agent vs Tools](#agent-vs-tools)
-8. [Khả năng dùng chung](#khả-năng-dùng-chung)
-9. [Luồng nghiệp vụ](#luồng-nghiệp-vụ)
-10. [Business State](#business-state)
-11. [Tính năng chính](#tính-năng-chính)
-12. [Tech Stack](#tech-stack)
-13. [Demo](#demo)
-14. [Cấu trúc dự án](#cấu-trúc-dự-án)
-15. [API](#api)
-16. [Cấu hình](#cấu-hình)
-17. [Quick Start](#quick-start)
-18. [Lộ trình](#lộ-trình)
-19. [Tài liệu](#tài-liệu)
-20. [License](#license)
+2. [Kiến trúc](#kiến-trúc)
+3. [Tech Stack](#tech-stack)
+4. [Cấu trúc dự án](#cấu-trúc-dự-án)
+5. [Hướng dẫn cài đặt](#hướng-dẫn-cài-đặt)
+6. [Chạy project](#chạy-project)
+7. [Tài khoản Demo](#tài-khoản-demo)
+8. [API Endpoints](#api-endpoints)
+9. [Luồng Demo chính](#luồng-demo-chính)
+10. [AI-Ready Architecture](#ai-ready-architecture)
 
 ---
 
-## Tổng quan / Overview
+## Tổng quan
 
-**AI Multi-Agent Operations Assistant** cho Nhà xe Hiền Hựu.
+Hệ thống MVP với:
 
-Hệ thống tự động hóa hoạt động CSKH và vận hành cho doanh nghiệp một người:
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Backend**: Python + FastAPI + SQLAlchemy
+- **Database**: PostgreSQL
+- **Authentication**: JWT với role-based access
 
-| Nghiệp vụ / Domain | Mô tả / Description |
-|---------------------|----------------------|
-| **Chăm sóc khách hàng / Customer Service** | Tra cứu thông tin nhà xe, lịch trình, dịch vụ |
-| **Thông tin chuyến / Trip Information** | Tìm chuyến, kiểm tra ghế |
-| **Đặt vé / Ticket Booking** | Đặt vé, giữ ghế, xác nhận |
-| **Thanh toán / Payment** | Thanh toán, theo dõi trạng thái |
-| **Xử lý khiếu nại / Complaint Handling** | Tiếp nhận, phân loại, xử lý khiếu nại |
+### Vai trò người dùng
 
-### Đây KHÔNG phải là chatbot đơn thuần / What This Is NOT
-
-Đây **không chỉ là chatbot trả lời câu hỏi**:
-
-```
-Yêu cầu khách hàng / Customer Request
-        ↓
-Chief Agent (Điều phối viên)
-        ↓
-Agent chuyên biệt / Specialist Agent
-        ↓
-Tools / RAG / Database
-        ↓
-Xác thực / Validation
-        ↓
-Phê duyệt Human (nếu cần) / Human Approval (when required)
-        ↓
-Hành động nghiệp vụ / Business Action
-        ↓
-Cập nhật State
-```
-
-Hệ thống thực hiện **luồng nghiệp vụ thực tế** — không chỉ sinh text.
-
-### 4 Tiêu chí chính / Four Key Criteria
-
-| # | Tiêu chí | Criteria | Mô tả / Description |
-|---|----------|----------|----------------------|
-| 1 | Bot làm việc thật | Bot works for real | Multi-step, gọi tool, quản lý state |
-| 2 | Phối hợp | Coordination | Nhiều agent handoff kèm context |
-| 3 | Quản trị mặc định | Default governance | Action rủi ro cần duyệt + audit |
-| 4 | Đích đến | Complete journey | Chat → Handoff → Work → Approve → Audit |
+| Vai trò | Mô tả |
+|---------|--------|
+| **Customer** | Khách hàng đặt vé, xem booking, tạo khiếu nại, yêu cầu hoàn tiền |
+| **Owner** | Chủ nhà xe quản lý chuyến xe, duyệt hoàn tiền, xem audit log |
 
 ---
 
-## Vấn đề / Problem
-
-### Pain Points
-
-Với mô hình doanh nghiệp một người, chủ nhà xe phải đồng thời:
-
-| Nhóm / Category | Công việc / Tasks |
-|-----------------|-------------------|
-| **CSKH / Customer Service** | Tư vấn, tra cứu lịch/chuyến, giá, ghế |
-| **Đặt vé / Booking** | Đặt vé, theo dõi thanh toán, tra cứu booking |
-| **Khiếu nại / Complaints** | Xử lý khiếu nại, yêu cầu hoàn tiền |
-
-Công việc lặp lại chiếm thời gian, trong khi nghiệp vụ quan trọng cần chủ doanh nghiệp quyết định.
-
-### Giải pháp / Solution
+## Kiến trúc
 
 ```
-Công việc thường xuyên          Nghiệp vụ rủi ro
-        ↓                              ↓
-       AI                              AI
-        ↓                              ↓
-Tự động xử lý              Chủ nhà xe kiểm soát
+┌─────────────────────────────────────────────────────────────┐
+│                     Frontend (React)                         │
+│  Customer Dashboard │ Owner Dashboard │ Trips │ Bookings     │
+└────────────────────────────┬────────────────────────────────┘
+                             │ REST API
+┌────────────────────────────▼────────────────────────────────┐
+│                   Backend (FastAPI)                          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
+│  │   Auth   │ │  Trips   │ │ Bookings │ │Payments  │      │
+│  │ Service  │ │ Service  │ │ Service  │ │ Service  │      │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
+│  │Complaints│ │ Refunds  │ │  Audit   │ │Dashboard │      │
+│  │ Service  │ │ Service  │ │ Service  │ │ Service  │      │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────┐
+│                   PostgreSQL Database                        │
+│  users │ trips │ bookings │ payments │ complaints │ refunds │
+│  audit_logs                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## Tại sao Multi-Agent? / Why Multi-Agent?
-
-| Tiêu chí / Concern | Agent đơn lẻ / Single Agent | Multi-Agent |
-|---------------------|------------------------------|-------------|
-| **Tách biệt domain / Domain separation** | Logic lẫn lộn | Agent chuyên biệt theo domain |
-| **Đặt vé vs Khiếu nại / Booking vs Complaint** | Luật chồng chéo | Ranh giới rõ ràng |
-| **Thanh toán / Payment flow** | Lẫn với intent khác | Agent downstream riêng |
-| **Mở rộng / Scalability** | Phức tạp khi thêm feature | Thêm agent không cần viết lại |
-| **Bảo trì / Maintainability** | Prompt phức tạp | Agent có trách nhiệm riêng |
-| **Kiểm soát / Controllability** | Khó audit | Delegation & validation rõ ràng |
-
-**Mục tiêu không phải tạo nhiều agent, mà tách biệt trách nhiệm nghiệp vụ khác nhau.**
-
----
-
-## Luồng sản phẩm / Product Flow
-
-```
-Hiểu / Understand
-    ↓
-Lập kế hoạch / Plan
-    ↓
-Ủy thác / Delegate
-    ↓
-Thực thi / Execute
-    ↓
-Xác thực / Validate
-    ↓
-Phê duyệt Human / Human Approval (nếu cần)
-    ↓
-Hành động / Act
-    ↓
-Cập nhật State
-```
-
----
-
-## Kiến trúc / Architecture
-
-```mermaid
-flowchart TD
-    U[Khách hàng / Customer] --> C[Chief Agent]
-
-    C --> B[Booking & Payment Agent]
-    C --> CO[Complaint Agent]
-
-    B --> BT[Booking Tools]
-    CO --> CT[Complaint Tools]
-
-    B --> DB[(PostgreSQL)]
-    CO --> DB
-
-    CO --> R[RAG / Knowledge Base<br/>Thông tin Hiền Hựu]
-
-    C --> V[Xác thực / Validation]
-
-    V --> H{Rủi ro cao? / Risk Check?}
-
-    H -->|Không / No| A[Tự động / Auto]
-    H -->|Có / Yes| HITL[Chủ nhà xe duyệt / Owner Approval]
-
-    A --> S[State cập nhật / State Updated]
-    HITL --> S
-```
-
----
-
-## Các Agent / Agents
-
-### Chief Agent
-
-**Điều phối viên / Orchestrator** — điều phối toàn bộ workflow.
-
-| Trách nhiệm / Responsibility | Mô tả / Description |
-|-------------------------------|------------------------|
-| Hiểu yêu cầu / Understand request | Tiếp nhận và parse input |
-| Phát hiện intent / Detect intent | Xác định booking, complaint, payment, FAQ |
-| Ủy thác task / Delegate task | Route đến Agent phù hợp |
-| Điều phối workflow / Coordinate | Quản lý các bước |
-| Xác thực kết quả / Validate | Kiểm tra output từ specialist |
-| Trigger HITL | Kích hoạt human approval khi cần |
-
-### Booking & Payment Agent
-
-**Domain: Đặt vé & Thanh toán Hiền Hựu**
-
-| Khả năng / Capability | Mô tả / Description |
-|------------------------|----------------------|
-| Tìm chuyến / Search trips | Tìm chuyến theo tuyến và ngày |
-| Kiểm tra ghế / Check seats | Hiển thị ghế trống |
-| Thu thập thông tin / Collect info | Thu thập thông tin khách |
-| Tạo booking / Create booking | Tạo booking chờ xác nhận |
-| Xử lý thanh toán / Process payment | Workflow thanh toán |
-| Xác nhận booking / Confirm booking | Cập nhật trạng thái |
-
-**Tools:**
-
-```text
-search_trip()          # Tìm chuyến
-get_trip_detail()      # Chi tiết chuyến
-check_available_seats() # Kiểm tra ghế
-hold_seat()            # Giữ ghế
-create_booking()        # Tạo booking
-get_booking()          # Lấy thông tin booking
-create_payment()       # Tạo thanh toán
-check_payment_status()  # Kiểm tra thanh toán
-```
-
-### Complaint Agent
-
-**Domain: Xử lý khiếu nại / Customer Complaints**
-
-| Khả năng / Capability | Mô tả / Description |
-|------------------------|----------------------|
-| Tiếp nhận khiếu nại / Receive | Tiếp nhận và phân loại |
-| Tra cứu booking / Retrieve | Lấy thông tin booking liên quan |
-| Phân loại type / Classify type | WRONG_SEAT, LATE, DRIVER, LOST_ITEM, PAYMENT, BOOKING_ERROR, REFUND, OTHER |
-| Đánh giá mức độ / Assess severity | LOW, MEDIUM, HIGH |
-| Đề xuất giải pháp / Recommend | Đề xuất hướng xử lý |
-| Escalate | Chuyển chủ nhà xe khi cần |
-
----
-
-## Agent vs Tools
-
-### Agents
-
-Chịu trách nhiệm cho:
-- **Reasoning** — suy luận và quyết định
-- **Delegation** — ủy thác và điều phối
-- **Workflow decisions** — quyết định luồng xử lý
-- **Domain-specific** — xử lý nghiệp vụ riêng
-
-### Tools
-
-Chịu trách nhiệm cho các thao tác **xác định (deterministic)**:
-
-| Domain | Operations |
-|--------|------------|
-| **Đặt vé / Booking** | `search_trip`, `check_seat`, `hold_seat`, `create_booking` |
-| **Thanh toán / Payment** | `create_payment`, `check_payment`, `confirm_payment` |
-| **Khiếu nại / Complaint** | `create_complaint`, `get_complaint`, `update_complaint` |
-
-Tools thực hiện action; chúng không suy luận.
-
----
-
-## Khả năng dùng chung / Shared Capabilities
-
-### RAG / Knowledge Base
-
-**RAG là capability dùng chung, KHÔNG PHẢI agent.**
-
-Dùng để truy xuất thông tin được phê duyệt:
-
-| Loại thông tin / Information Type | Ví dụ / Example |
-|----------------------------------|-----------------|
-| Loại xe / Vehicle types | Limousine, Cabin |
-| Khu vực dịch vụ / Service areas | Tuyến Hà Nội ↔ Tà Xùa |
-| Điểm đón/trả / Pickup/drop-off | Điểm đón, điểm trả |
-| Chính sách / Policies | Chính sách hoàn, hủy |
-| FAQ | Câu hỏi thường gặp |
-
-**Quan trọng:** RAG truy xuất knowledge; không thay thế tools giao dịch.
-
-```
-"Câu hỏi về lịch trình?"
-→ Knowledge Base / Trip Data Tool
-
-"Đặt 2 vé."
-→ Booking Agent + Tools
-```
-
-### Shared State
-
-Agents chia sẻ context trong suốt workflow:
-
-```json
-{
-  "user_id": "...",
-  "intent": "booking",
-  "origin": "Hà Nội / Hanoi",
-  "destination": "Tà Xùa / Ta Xua",
-  "travel_date": "2026-09-20",
-  "quantity": 2,
-  "trip_id": "...",
-  "customer_name": "...",
-  "phone": "...",
-  "booking_id": "...",
-  "booking_status": "PENDING_PAYMENT",
-  "payment_status": "UNPAID",
-  "requires_human_approval": false
-}
-```
-
-### Human-in-the-Loop
-
-**HITL là cổng kiểm soát có điều kiện** cho các action nhạy cảm.
-
-| AI tự động / AI can do | Cần duyệt / Owner must approve |
-|-------------------------|-------------------------------|
-| FAQ, tra cứu thông tin | Hoàn tiền / Refunds |
-| Kiểm tra chuyến, ghế | Khiếu nại nghiêm trọng |
-| Tạo booking | Request ngoài policy |
-| Phân loại khiếu nại | Action tài chính |
-
----
-
-## Luồng nghiệp vụ / Core Workflows
-
-### Luồng đặt vé / Booking Workflow
-
-```mermaid
-flowchart LR
-    A[Khách / Customer] -->|Yêu cầu / Request| B[Chief]
-    B -->|Ủy thác / Delegate| C[Booking Agent]
-    C --> D[Tìm chuyến / Search Trip]
-    D --> E[Kiểm tra ghế / Check Seats]
-    E --> F[Hiển thị options]
-    F --> A
-    A -->|Chọn / Select| G[Thu thập info]
-    G --> H[Tạo Booking]
-    H --> I[Khách xác nhận / Confirm]
-    I --> J[Thanh toán / Payment]
-    J --> K{Kiểm tra / Check}
-    K -->|Thành công / Success| L[Xác nhận / Confirm]
-    K -->|Thất bại / Fail| M[Thử lại / Retry]
-    L --> N[State cập nhật]
-```
-
-### Luồng khiếu nại / Complaint Workflow
-
-```mermaid
-flowchart TD
-    A[Khách] -->|Khiếu nại| B[Chief]
-    B -->|Ủy thác| C[Complaint Agent]
-    C --> D[Lấy Booking]
-    D --> E[Phân loại]
-    E --> F{Đánh giá mức độ}
-    F -->|Thấp / Low| G[Tự xử lý]
-    F -->|Cao / High| H[Chủ nhà xe duyệt]
-    G --> I[Cập nhật State]
-    H --> J{Duyệt?}
-    J -->|Có| K[Thực thi]
-    J -->|Không| L[Từ chối]
-    K --> I
-    I --> M[Thông báo]
-```
-
-### Luồng hoàn tiền / Refund Flow
-
-```
-Khách yêu cầu hoàn tiền
-        ↓
-Complaint Agent
-        ↓
-get_booking() + RAG: refund_policy
-        ↓
-Kiểm tra điều kiện
-        ↓
-Tạo Refund Request
-        ↓
-⚠️ Human Approval
-        ↓
-Chủ nhà xe xem xét
-        ↓
-Thực hiện hoàn tiền (bên ngoài)
-        ↓
-Cập nhật Database: REFUNDED
-        ↓
-Audit Log
-        ↓
-Thông báo khách
-```
-
-**Lưu ý:** AI **không trực tiếp chuyển tiền**. AI tạo, theo dõi và cập nhật request; chủ nhà xe thực hiện giao dịch thực tế.
-
----
-
-## Business State
-
-Agents vận hành trên business state thông qua các tools được kiểm soát.
-
-| Entity | Mô tả |
-|--------|--------|
-| **Customer** | Thông tin khách |
-| **Route** | Tuyến đi (Hà Nội ↔ Tà Xùa) |
-| **Trip** | Chuyến xe với giờ, loại xe |
-| **Vehicle** | Loại xe (Limousine, Cabin) |
-| **Seat** | Ghế với trạng thái |
-| **Booking** | Bản ghi đặt vé |
-| **Payment** | Bản ghi thanh toán |
-| **Complaint** | Bản ghi khiếu nại |
-
----
-
-## Tính năng chính / Key Features
-
-| Tính năng / Feature | Mô tả / Description |
-|---------------------|----------------------|
-| Intent Detection | Định tuyến request đến workflow phù hợp |
-| Multi-Agent Handoff | Ủy thác cho specialist kèm context |
-| Tool Calling | Thực thi nghiệp vụ |
-| RAG | Truy xuất thông tin Hiền Hựu |
-| HITL | Kiểm soát action nhạy cảm |
-| Shared State | Duy trì context xuyên suốt workflow |
-| Audit Log | Theo dõi execution |
 
 ---
 
 ## Tech Stack
 
 ### Backend
-
-| Component | Technology |
-|-----------|------------|
-| Ngôn ngữ / Language | Python 3.11+ |
-| Framework | FastAPI |
-| Agent Framework | LangGraph |
-
-### AI
-
-| Component | Technology |
-|-----------|------------|
-| LLM | OpenAI GPT-4 / Anthropic Claude |
-| Embeddings | OpenAI Embeddings |
-| RAG | Semantic search với pgvector |
-
-### Database
-
-| Component | Technology |
-|-----------|------------|
-| Relational | PostgreSQL 15+ |
-| Vector | pgvector |
+- **Python 3.11+**
+- **FastAPI** - Web framework
+- **SQLAlchemy** - ORM
+- **Pydantic** - Validation
+- **asyncpg** - PostgreSQL async driver
+- **JWT** - Authentication
 
 ### Frontend
+- **React 18**
+- **TypeScript**
+- **Vite**
+- **Tailwind CSS**
+- **React Router**
+- **TanStack Query**
+- **Axios**
 
-| Component | Technology |
-|-----------|------------|
-| Runtime | Node.js |
-| Framework | Express.js / React |
-
-### Infrastructure
-
-| Component | Technology |
-|-----------|------------|
-| Container | Docker |
-| Database | Docker Compose |
-
----
-
-## Demo
-
-```
-Khách hàng:
-"Tôi muốn đặt 2 vé Hà Nội đi Tà Xùa."
-
-Chief Agent:
-→ Phát hiện: booking intent
-→ Entities: origin=Hà Nội, destination=Tà Xùa, quantity=2
-→ Ủy thác cho Booking Agent
-
-Booking Agent:
-→ search_trip(origin="Hà Nội", destination="Tà Xùa")
-→ check_available_seats(trip_id="...")
-→ Kết quả: chuyến 20:00, ghế A05, A06 trống
-
-Chief Agent:
-→ "Có chuyến 20:00 với ghế A05, A06. Đặt không?"
-
-Khách:
-"Đặt."
-
-Booking Agent:
-→ hold_seat(trip_id="...", seats=["A05", "A06"])
-→ create_booking(customer_info={...})
-→ Kết quả: booking_id="BK001", status=BOOKING_DRAFT
-
-Chief Agent:
-→ "Booking BK001 đã tạo. Chuyển thanh toán?"
-
-Khách:
-"Xác nhận."
-
-Booking Agent:
-→ create_payment(booking_id="BK001", amount=...)
-→ check_payment_status(booking_id="...")
-→ Kết quả: PAID
-
-Chief Agent:
-→ "Thanh toán thành công. Booking BK001 xác nhận!"
-
-Final State:
-→ booking_id: BK001
-→ booking_status: CONFIRMED
-→ payment_status: PAID
-→ seats: A05, A06
-```
+### Database
+- **PostgreSQL 15**
+- **Docker Compose**
 
 ---
 
-## Cấu trúc dự án / Project Structure
+## Cấu trúc dự án
 
 ```
-ai-agent-customer-service/
+AI-Agent-Customer-Service/
 │
 ├── backend/
-│   ├── src/
-│   │   ├── agent/
-│   │   │   ├── chief.py           # Chief Agent
-│   │   │   ├── booking.py         # Booking & Payment Agent
-│   │   │   ├── complaint.py       # Complaint Agent
-│   │   │   ├── state.py           # Shared state
-│   │   │   └── executor.py        # Agent executor
-│   │   │
-│   │   ├── tools/
-│   │   │   ├── booking_tools.py   # Booking operations
-│   │   │   ├── payment_tools.py   # Payment operations
-│   │   │   ├── complaint_tools.py # Complaint operations
-│   │   │   └── search.py          # RAG search
-│   │   │
-│   │   ├── models/
-│   │   ├── prompts/
-│   │   ├── utils/
-│   │   └── api/
-│   │
-│   ├── tests/
-│   ├── requirements.txt
-│   └── main.py
+│   ├── main.py                 # FastAPI app entry
+│   ├── seed_data.py           # Tạo dữ liệu mẫu
+│   ├── requirements.txt       # Python dependencies
+│   ├── .env                   # Environment config
+│   └── src/
+│       ├── config.py          # Settings
+│       ├── database.py        # DB connection
+│       ├── models.py          # SQLAlchemy models
+│       ├── schemas.py         # Pydantic schemas
+│       ├── dependencies.py    # Auth dependencies
+│       ├── api/routes/        # API endpoints
+│       └── services/          # Business logic
+│           ├── auth_service.py
+│           ├── trip_service.py
+│           ├── booking_service.py
+│           ├── payment_service.py
+│           ├── complaint_service.py
+│           ├── refund_service.py
+│           ├── audit_service.py
+│           └── dashboard_service.py
 │
 ├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   ├── components/
-│   │   ├── features/
-│   │   └── services/
 │   ├── package.json
-│   └── tsconfig.json
+│   ├── vite.config.ts
+│   ├── index.html
+│   └── src/
+│       ├── main.tsx
+│       ├── App.tsx
+│       ├── types/index.ts
+│       ├── services/
+│       │   ├── api.ts
+│       │   └── auth.tsx
+│       ├── lib/utils.ts
+│       ├── components/
+│       │   ├── Layout.tsx
+│       │   └── AuthLayout.tsx
+│       └── pages/
+│           ├── LoginPage.tsx
+│           ├── RegisterPage.tsx
+│           ├── customer/
+│           │   ├── Dashboard.tsx
+│           │   ├── SearchTrips.tsx
+│           │   ├── TripDetail.tsx
+│           │   ├── MyBookings.tsx
+│           │   ├── BookingDetail.tsx
+│           │   ├── MyComplaints.tsx
+│           │   └── MyRefunds.tsx
+│           └── owner/
+│               ├── Dashboard.tsx
+│               ├── OwnerTrips.tsx
+│               ├── OwnerBookings.tsx
+│               ├── OwnerComplaints.tsx
+│               ├── OwnerApprovals.tsx
+│               └── OwnerAuditLogs.tsx
 │
-├── data/
-│   └── knowledge-base/
-│       └── README.md        # Placeholder - cập nhật dữ liệu thực
-│
-├── docs/
-│
-├── docker-compose.yml
+├── docker-compose.yml          # PostgreSQL
 ├── README.md
-└── .gitignore
+└── CLAUDE.md
 ```
 
 ---
 
-## API
+## Hướng dẫn cài đặt
 
-| Endpoint | Method | Mô tả / Description |
-|----------|--------|---------------------|
-| `/api/chat` | POST | Gửi tin nhắn, nhận phản hồi từ Agent |
-| `/api/bookings` | GET, POST | Liệt kê hoặc tạo booking |
-| `/api/bookings/{id}` | GET, PUT | Lấy hoặc cập nhật booking |
-| `/api/trips` | GET | Tìm chuyến theo tuyến và ngày |
-| `/api/payments` | POST | Tạo thanh toán |
-| `/api/payments/{id}/confirm` | POST | Xác nhận thanh toán |
-| `/api/complaints` | GET, POST | Liệt kê hoặc tạo khiếu nại |
-| `/api/admin/pending-approvals` | GET | Lấy danh sách duyệt |
-| `/api/admin/approvals/{id}` | POST | Xử lý duyệt |
+### Yêu cầu
 
----
+- Node.js 18+
+- Python 3.11+
+- Docker Desktop (cho PostgreSQL)
 
-## Cấu hình / Configuration
+### 1. Khởi động PostgreSQL
 
-Environment variables (xem `backend/.env.example`):
+```powershell
+# Di chuyển đến thư mục project
+cd d:\AI-Agent-Customer-Service
 
-```env
-DATABASE_URL=postgresql://user:pass@localhost:5432/ai_agent_cs
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-EMBEDDING_MODEL=text-embedding-3-small
-SECRET_KEY=your-secret-key
-DEBUG=true
+# Khởi động PostgreSQL bằng Docker
+docker-compose up -d
 ```
 
----
+### 2. Cài đặt Backend
 
-## Quick Start
-
-### Backend
-
-```bash
+```powershell
+# Di chuyển đến thư mục backend
 cd backend
 
 # Tạo virtual environment
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# .\venv\Scripts\activate   # Windows
+
+# Kích hoạt virtual environment
+.\venv\Scripts\Activate
 
 # Cài đặt dependencies
 pip install -r requirements.txt
 
-# Cấu hình environment
-cp .env.example .env
+# Copy .env
+copy .env.example .env
+```
 
-# Khởi động server
+### 3. Tạo database và seed data
+
+```powershell
+# Chạy seed script để tạo bảng và dữ liệu mẫu
+python seed_data.py
+```
+
+### 4. Cài đặt Frontend
+
+```powershell
+# Mở terminal mới, di chuyển đến frontend
+cd frontend
+
+# Cài đặt dependencies
+npm install
+```
+
+---
+
+## Chạy Project
+
+### Terminal 1: Backend
+
+```powershell
+cd backend
+.\venv\Scripts\Activate
 uvicorn main:app --reload --port 8000
 ```
 
-### Frontend
+Backend chạy tại: http://localhost:8000
+Swagger docs: http://localhost:8000/docs
 
-```bash
+### Terminal 2: Frontend
+
+```powershell
 cd frontend
-npm install
 npm run dev
 ```
 
-### Database (Docker)
+Frontend chạy tại: http://localhost:5173
 
-```bash
-docker-compose up -d
+---
+
+## Tài khoản Demo
+
+| Vai trò | Email | Mật khẩu |
+|---------|-------|----------|
+| **Owner** | owner@hienhuu.vn | Owner@123 |
+| **Customer** | customer@example.com | Customer@123 |
+
+### Dữ liệu mẫu đã có
+
+- 4 chuyến xe (Hà Nội ↔ Tà Xùa)
+- 3 khách hàng
+- 4 bookings (2 confirmed, 2 pending)
+- 2 complaints (open)
+- 1 refund request (waiting approval)
+
+---
+
+## API Endpoints
+
+### Authentication
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| POST | `/api/auth/register` | Đăng ký tài khoản |
+| POST | `/api/auth/login` | Đăng nhập |
+| GET | `/api/auth/me` | Lấy thông tin user hiện tại |
+
+### Trips
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| GET | `/api/trips` | Lấy danh sách chuyến xe |
+| GET | `/api/trips/{id}` | Chi tiết chuyến xe |
+| POST | `/api/trips` | Tạo chuyến xe (owner) |
+| PUT | `/api/trips/{id}` | Cập nhật chuyến xe (owner) |
+| DELETE | `/api/trips/{id}` | Xóa chuyến xe (owner) |
+
+### Bookings
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| GET | `/api/bookings` | Danh sách booking của tôi |
+| GET | `/api/bookings/all` | Tất cả bookings (owner) |
+| GET | `/api/bookings/{id}` | Chi tiết booking |
+| POST | `/api/bookings` | Tạo booking mới |
+| PATCH | `/api/bookings/{id}/cancel` | Hủy booking |
+
+### Payments
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| GET | `/api/payments/{id}` | Chi tiết payment |
+| POST | `/api/payments/{id}/pay` | Mô phỏng thanh toán |
+
+### Complaints
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| GET | `/api/complaints` | Danh sách khiếu nại của tôi |
+| GET | `/api/complaints/all` | Tất cả khiếu nại (owner) |
+| GET | `/api/complaints/{id}` | Chi tiết khiếu nại |
+| POST | `/api/complaints` | Tạo khiếu nại |
+| PATCH | `/api/complaints/{id}` | Cập nhật khiếu nại (owner) |
+| POST | `/api/complaints/{id}/resolve` | Giải quyết khiếu nại (owner) |
+
+### Refunds
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| GET | `/api/refunds` | Danh sách hoàn tiền của tôi |
+| GET | `/api/refunds/pending` | Danh sách chờ duyệt (owner) |
+| GET | `/api/refunds/all` | Tất cả refunds (owner) |
+| GET | `/api/refunds/{id}` | Chi tiết refund |
+| POST | `/api/refunds` | Tạo yêu cầu hoàn tiền |
+| POST | `/api/refunds/{id}/approve` | Duyệt hoàn tiền (owner) |
+| POST | `/api/refunds/{id}/reject` | Từ chối hoàn tiền (owner) |
+| POST | `/api/refunds/{id}/mark-refunded` | Đánh dấu đã hoàn tiền (owner) |
+
+### Dashboard & Audit
+
+| Method | Endpoint | Mô tả |
+|--------|----------|--------|
+| GET | `/api/dashboard/stats` | Thống kê dashboard (owner) |
+| GET | `/api/audit-logs` | Nhật ký audit (owner) |
+
+---
+
+## Luồng Demo chính
+
+### 1. Luồng đặt vé (Customer)
+
+```
+1. Đăng nhập với customer@example.com
+2. Vào "Tìm chuyến"
+3. Tìm "Hà Nội → Tà Xùa"
+4. Chọn chuyến → Nhập số ghế
+5. Xác nhận đặt vé
+6. Thanh toán (mô phỏng)
+7. Xem booking đã xác nhận
+```
+
+### 2. Luồng khiếu nại & hoàn tiền (Customer)
+
+```
+1. Đăng nhập với customer@example.com
+2. Vào "Khiếu nại" → Tạo khiếu nại
+3. Vào "Hoàn tiền" → Tạo yêu cầu hoàn tiền
+4. Điền thông tin tài khoản
+5. Gửi yêu cầu
+```
+
+### 3. Luồng duyệt hoàn tiền (Owner)
+
+```
+1. Đăng nhập với owner@hienhuu.vn
+2. Vào "Duyệt hoàn tiền"
+3. Xem yêu cầu đang chờ
+4. Nhấn "Phê duyệt"
+5. Nhấn "Đánh dấu đã hoàn tiền"
+6. Kiểm tra "Audit Log"
+```
+
+### 4. Quản lý chuyến xe (Owner)
+
+```
+1. Đăng nhập với owner@hienhuu.vn
+2. Vào "Chuyến xe"
+3. Thêm chuyến xe mới
+4. Sửa thông tin chuyến
+5. Xóa chuyến xe không cần
 ```
 
 ---
 
-## Lộ trình / Roadmap
+## AI-Ready Architecture
 
-### Phase 1 — MVP
+Mặc dù chưa tích hợp AI, backend được thiết kế để dễ dàng mở rộng với AI Agent:
 
-- [ ] Core Agent architecture (Chief + Specialist Agents)
-- [ ] Luồng đặt vé (search → book → pay → confirm)
-- [ ] Luồng khiếu nại (receive → classify → resolve)
-- [ ] Basic RAG cho thông tin Hiền Hựu
-- [ ] Cơ chế Human-in-the-Loop
-- [ ] Audit Log
+### Service Layer cho AI Tools
 
-### Phase 2 — Customer Service
+```python
+# TripService methods cho AI
+- search_trips(origin, destination, date)
+- check_available_seats(trip_id)
+- get_trip_detail(trip_id)
 
-- [ ] Hỗ trợ đa kênh (Web, Zalo, Facebook)
-- [ ] Conversation memory
-- [ ] Customer history
+# BookingService methods cho AI
+- create_booking(user_id, trip_id, seat_count)
+- get_booking(booking_id)
+- check_booking_status(booking_id)
 
-### Phase 3 — Operations
+# PaymentService methods cho AI
+- create_payment(booking_id)
+- check_payment_status(payment_id)
 
-- [ ] Fleet/Trip Management
-- [ ] Revenue Analytics
-- [ ] Reporting Dashboard
+# ComplaintService methods cho AI
+- create_complaint(customer_id, booking_id, type, description)
+- get_complaints_by_booking(booking_id)
+- check_refund_eligibility(booking_id)
+
+# RefundService methods cho AI
+- create_refund_request(complaint_id, booking_id, amount, bank_info)
+- get_pending_refunds()
+- submit_for_approval(refund_id)
+
+# AuditService methods cho AI
+- log_action(actor, action, entity, entity_id, metadata)
+- get_audit_trail(entity_type, entity_id)
+```
+
+### Design Patterns
+
+1. **Service Layer Pattern** - Tách biệt business logic khỏi API routes
+2. **Repository Pattern** - Truy xuất data qua service
+3. **Dependency Injection** - FastAPI dependency system
+4. **Audit Trail** - Mọi action đều được log
 
 ---
 
-## Tài liệu / Documentation
+## Roadmap
 
-- [PRD](PRD%20%E2%80%94%20AI%20Agent%20Customer%20Service%20&%20Ticket%20Booking%20Platform.md) — Product Requirements chi tiết
+### Phase 1 (MVP - Hiện tại) ✅
+- [x] Backend REST API
+- [x] Frontend Customer/Owner Dashboard
+- [x] Database với seed data
+- [x] Authentication & Authorization
+- [x] CRUD operations
+- [x] Workflow: Booking → Payment → Complaint → Refund
 
----
+### Phase 2 - AI Integration
+- [ ] Tích hợp LangGraph
+- [ ] Chief Agent cho intent detection
+- [ ] Booking & Payment Agent
+- [ ] Complaint Agent
+- [ ] RAG cho knowledge base
 
-## Data Accuracy Notice
-
-> Schedule, pricing, seat availability and pickup/drop-off information may change over time. The AI system should retrieve transactional information from the current business data source or tools rather than relying solely on static knowledge.
-
-> Lịch trình, giá vé, số ghế trống và thông tin điểm đón/trả có thể thay đổi theo thời gian. Hệ thống AI nên truy xuất thông tin giao dịch từ nguồn dữ liệu hiện tại thay vì chỉ dựa vào knowledge base tĩnh.
+### Phase 3 - Enhancement
+- [ ] Real-time notifications
+- [ ] Email/SMS integration
+- [ ] Payment gateway thật
+- [ ] Mobile app
 
 ---
 
