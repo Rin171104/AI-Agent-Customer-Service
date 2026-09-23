@@ -12,8 +12,8 @@
 2. [Kiến trúc](#kiến-trúc)
 3. [Tech Stack](#tech-stack)
 4. [Cấu trúc dự án](#cấu-trúc-dự-án)
-5. [Hướng dẫn cài đặt](#hướng-dẫn-cài-đặt)
-6. [Chạy project](#chạy-project)
+5. [Docker Deployment](#docker-deployment)
+6. [Development Local](#development-local)
 7. [Tài khoản Demo](#tài-khoản-demo)
 8. [API Endpoints](#api-endpoints)
 9. [Luồng Demo chính](#luồng-demo-chính)
@@ -43,24 +43,24 @@ Hệ thống MVP với:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Frontend (React)                         │
-│  Customer Dashboard │ Owner Dashboard │ Trips │ Bookings     │
+│                     Frontend (Nginx :3000)                   │
+│  Customer Dashboard │ Owner Dashboard │ Trips │ Bookings       │
 └────────────────────────────┬────────────────────────────────┘
-                             │ REST API
+                             │ /api
 ┌────────────────────────────▼────────────────────────────────┐
-│                   Backend (FastAPI)                          │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
-│  │   Auth   │ │  Trips   │ │ Bookings │ │Payments  │      │
-│  │ Service  │ │ Service  │ │ Service  │ │ Service  │      │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
-│  │Complaints│ │ Refunds  │ │  Audit   │ │Dashboard │      │
-│  │ Service  │ │ Service  │ │ Service  │ │ Service  │      │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
+│                   Backend (FastAPI :8000)                    │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │   Auth   │ │  Trips   │ │ Bookings │ │Payments  │       │
+│  │ Service  │ │ Service  │ │ Service  │ │ Service  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │Complaints│ │ Refunds  │ │  Audit   │ │Dashboard │       │
+│  │ Service  │ │ Service  │ │ Service  │ │ Service  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
 └────────────────────────────┬────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────┐
-│                   PostgreSQL Database                        │
+│               PostgreSQL (:5432)                             │
 │  users │ trips │ bookings │ payments │ complaints │ refunds │
 │  audit_logs                                              │
 └─────────────────────────────────────────────────────────────┘
@@ -91,77 +91,83 @@ Hệ thống MVP với:
 - **PostgreSQL 15**
 - **Docker Compose**
 
----
-
-## Cấu trúc dự án
-
-```
-AI-Agent-Customer-Service/
-│
-├── backend/
-│   ├── main.py                 # FastAPI app entry
-│   ├── seed_data.py           # Tạo dữ liệu mẫu
-│   ├── requirements.txt       # Python dependencies
-│   ├── .env                   # Environment config
-│   └── src/
-│       ├── config.py          # Settings
-│       ├── database.py        # DB connection
-│       ├── models.py          # SQLAlchemy models
-│       ├── schemas.py         # Pydantic schemas
-│       ├── dependencies.py    # Auth dependencies
-│       ├── api/routes/        # API endpoints
-│       └── services/          # Business logic
-│           ├── auth_service.py
-│           ├── trip_service.py
-│           ├── booking_service.py
-│           ├── payment_service.py
-│           ├── complaint_service.py
-│           ├── refund_service.py
-│           ├── audit_service.py
-│           └── dashboard_service.py
-│
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── index.html
-│   └── src/
-│       ├── main.tsx
-│       ├── App.tsx
-│       ├── types/index.ts
-│       ├── services/
-│       │   ├── api.ts
-│       │   └── auth.tsx
-│       ├── lib/utils.ts
-│       ├── components/
-│       │   ├── Layout.tsx
-│       │   └── AuthLayout.tsx
-│       └── pages/
-│           ├── LoginPage.tsx
-│           ├── RegisterPage.tsx
-│           ├── customer/
-│           │   ├── Dashboard.tsx
-│           │   ├── SearchTrips.tsx
-│           │   ├── TripDetail.tsx
-│           │   ├── MyBookings.tsx
-│           │   ├── BookingDetail.tsx
-│           │   ├── MyComplaints.tsx
-│           │   └── MyRefunds.tsx
-│           └── owner/
-│               ├── Dashboard.tsx
-│               ├── OwnerTrips.tsx
-│               ├── OwnerBookings.tsx
-│               ├── OwnerComplaints.tsx
-│               ├── OwnerApprovals.tsx
-│               └── OwnerAuditLogs.tsx
-│
-├── docker-compose.yml          # PostgreSQL
-├── README.md
-└── CLAUDE.md
-```
+### Infrastructure
+- **Docker** - Containerization
+- **Nginx** - Frontend serving & reverse proxy
 
 ---
 
-## Hướng dẫn cài đặt
+## Docker Deployment
+
+### Yêu cầu
+
+- Docker Desktop (Windows/Mac/Linux)
+- Docker Compose
+
+### Khởi động nhanh
+
+```powershell
+# Di chuyển đến thư mục project
+cd d:\AI-Agent-Customer-Service
+
+# Build và chạy tất cả services
+docker-compose up -d --build
+
+# Xem logs
+docker-compose logs -f
+
+# Hoặc chạy background
+docker-compose up -d
+```
+
+### Các lệnh Docker thường dùng
+
+```powershell
+# Khởi động services
+docker-compose up -d
+
+# Dừng services
+docker-compose down
+
+# Xem trạng thái
+docker-compose ps
+
+# Xem logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f postgres
+
+# Rebuild không cache
+docker-compose build --no-cache
+
+# Reset hoàn toàn (xóa data)
+docker-compose down -v
+docker-compose up -d --build
+
+# Restart một service
+docker-compose restart backend
+```
+
+### Ports
+
+| Service | Port | Mô tả |
+|---------|------|--------|
+| Frontend | http://localhost:3000 | Web UI |
+| Backend API | http://localhost:8000 | REST API |
+| API Docs | http://localhost:8000/docs | Swagger Documentation |
+| PostgreSQL | localhost:5432 | Database |
+
+### Seed Data
+
+Sau khi khởi động lần đầu, chạy seed data:
+
+```powershell
+docker-compose exec backend python seed_data.py
+```
+
+---
+
+## Development Local
 
 ### Yêu cầu
 
@@ -172,23 +178,18 @@ AI-Agent-Customer-Service/
 ### 1. Khởi động PostgreSQL
 
 ```powershell
-# Di chuyển đến thư mục project
-cd d:\AI-Agent-Customer-Service
-
-# Khởi động PostgreSQL bằng Docker
-docker-compose up -d
+docker-compose up -d postgres
 ```
 
-### 2. Cài đặt Backend
+### 2. Backend
 
 ```powershell
-# Di chuyển đến thư mục backend
 cd backend
 
 # Tạo virtual environment
 python -m venv venv
 
-# Kích hoạt virtual environment
+# Kích hoạt
 .\venv\Scripts\Activate
 
 # Cài đặt dependencies
@@ -196,44 +197,21 @@ pip install -r requirements.txt
 
 # Copy .env
 copy .env.example .env
-```
 
-### 3. Tạo database và seed data
-
-```powershell
-# Chạy seed script để tạo bảng và dữ liệu mẫu
+# Chạy seed data
 python seed_data.py
-```
 
-### 4. Cài đặt Frontend
-
-```powershell
-# Mở terminal mới, di chuyển đến frontend
-cd frontend
-
-# Cài đặt dependencies
-npm install
-```
-
----
-
-## Chạy Project
-
-### Terminal 1: Backend
-
-```powershell
-cd backend
-.\venv\Scripts\Activate
+# Khởi động
 uvicorn main:app --reload --port 8000
 ```
 
 Backend chạy tại: http://localhost:8000
-Swagger docs: http://localhost:8000/docs
 
-### Terminal 2: Frontend
+### 3. Frontend
 
 ```powershell
 cd frontend
+npm install
 npm run dev
 ```
 
@@ -250,9 +228,10 @@ Frontend chạy tại: http://localhost:5173
 
 ### Dữ liệu mẫu đã có
 
-- 4 chuyến xe (Hà Nội ↔ Tà Xùa)
+- 5 chuyến xe (Hà Nội ↔ Tà Xùa)
 - 3 khách hàng
 - 4 bookings (2 confirmed, 2 pending)
+- 2 payments (paid)
 - 2 complaints (open)
 - 1 refund request (waiting approval)
 
@@ -429,6 +408,7 @@ Mặc dù chưa tích hợp AI, backend được thiết kế để dễ dàng m
 - [x] Authentication & Authorization
 - [x] CRUD operations
 - [x] Workflow: Booking → Payment → Complaint → Refund
+- [x] Docker deployment
 
 ### Phase 2 - AI Integration
 - [ ] Tích hợp LangGraph

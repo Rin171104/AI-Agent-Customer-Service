@@ -1,0 +1,9 @@
+# Ignore venv, node_modules, git, etc.
+**/venv
+**/node_modules
+**/.git
+**/__pycache__
+**/*.pyc
+**/.env
+**/dist
+**/.DS_Store

@@ -8,6 +8,7 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='repla
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+from datetime import UTC as utc
 import random
 
 from src.database import async_session_maker, init_db
@@ -125,7 +126,7 @@ async def seed_database():
             amount=booking1.total_amount,
             method="CASH",
             status=PaymentStatus.PAID,
-            paid_at=datetime.now(timezone.utc)
+            paid_at=datetime.now()
         )
         db.add(payment1)
 
@@ -134,7 +135,7 @@ async def seed_database():
             amount=booking3.total_amount,
             method="CASH",
             status=PaymentStatus.PAID,
-            paid_at=datetime.now(timezone.utc)
+            paid_at=datetime.now()
         )
         db.add(payment3)
 

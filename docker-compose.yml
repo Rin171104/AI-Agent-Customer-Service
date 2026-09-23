@@ -18,5 +18,32 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hienhuu_backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hienhuu:hienhuu123@postgres:5432/hienhuu_db
+      - SECRET_KEY=hienhuu-secret-key-change-in-production
+      - CORS_ORIGINS=["http://localhost","http://frontend:80"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hienhuu_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
