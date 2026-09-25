@@ -1,0 +1,59 @@
+"""
+RAG Evaluation Questions
+
+Baseline evaluation dataset cho retrieval.
+"""
+[
+  {
+    "id": "q001",
+    "question": "Điều kiện hoàn tiền là gì?",
+    "expected_source": "refund_policy.md"
+  },
+  {
+    "id": "q002",
+    "question": "Chính sách hủy vé như thế nào?",
+    "expected_source": "cancellation_policy.md"
+  },
+  {
+    "id": "q003",
+    "question": "Nhà xe có những tuyến nào?",
+    "expected_source": "routes.md"
+  },
+  {
+    "id": "q004",
+    "question": "Cách thanh toán như thế nào?",
+    "expected_source": "payment_policy.md"
+  },
+  {
+    "id": "q005",
+    "question": "Tôi có thể đặt vé bằng cách nào?",
+    "expected_source": "booking_policy.md"
+  },
+  {
+    "id": "q006",
+    "question": "Điểm đón ở đâu?",
+    "expected_source": "pickup_dropoff.md"
+  },
+  {
+    "id": "q007",
+    "question": "Nhà xe hoạt động mấy giờ?",
+    "expected_source": "company.md"
+  },
+  {
+    "id": "q008",
+    "question": "Thông tin liên hệ của nhà xe là gì?",
+    "expected_source": "company.md"
+  },
+  {
+    "id": "q009",
+    "question": "Câu hỏi không liên quan đến nhà xe gì cả",
+    "expected_source": null,
+    "expected": "NO_KNOWLEDGE"
+  },
+  {
+    "id": "q010",
+    "question": "Tôi muốn hỏi về thời tiết",
+    "expected_source": null,
+    "expected": "NO_KNOWLEDGE"
+  }
+]
