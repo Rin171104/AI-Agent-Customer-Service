@@ -1,29 +1,67 @@
 # Tuyến Đường
 
-**DEMO DATA - Không phải dữ liệu chính thức**
+**DEMO DATA - Thông tin tuyến mẫu**
 
-## Các tuyến chính
+## Tuyến chính
 
-### TP.HCM - Đà Lạt
-- **Thời gian di chuyển**: ~7-8 giờ
-- **Tần suất**: 2 chuyến/ngày (6h00 và 20h00)
-- **Giá vé tham khảo**: 250,000 - 350,000 VND
+Nhà xe Hiền Hựu hoạt động trên tuyến miền núi phía Bắc:
 
-### TP.HCM - Nha Trang
-- **Thời gian di chuyển**: ~8-9 giờ
-- **Tần suất**: 2 chuyến/ngày (5h30 và 19h30)
-- **Giá vé tham khảo**: 300,000 - 400,000 VND
+```
+Hà Nội
+   ↕
+Bắc Yên (Sơn La)
+   ↕
+Tà Xùa
+```
 
-### TP.HCM - Tà Xùa
-- **Thời gian di chuyển**: ~6-7 giờ
-- **Tần suất**: 1-2 chuyến/ngày
-- **Giá vé tham khảo**: 200,000 - 300,000 VND
+## Các chặng tuyến
 
-### TP.HCM - Hà Nội
-- **Thời gian di chuyển**: ~30-35 giờ
-- **Tần suất**: 1 chuyến/ngày
-- **Giá vé tham khảo**: 550,000 - 750,000 VND
+### Hà Nội - Tà Xùa (qua Bắc Yên)
 
-## Lưu ý
-- Lịch trình có thể thay đổi theo mùa và ngày lễ
-- Vui lòng liên hệ hotline để xác nhận lịch trình chính xác
+Đây là tuyến chính của nhà xe, kết nối thủ đô với điểm du lịch Tà Xùa.
+
+### Chặng Hà Nội ↔ Bắc Yên
+
+- Điểm đầu: Hà Nội
+- Điểm cuối: Bắc Yên
+- Khoảng cách: ~250km
+
+### Chặng Bắc Yên ↔ Tà Xùa
+
+- Điểm đầu: Bắc Yên
+- Điểm cuối: Tà Xùa
+- Khoảng cách: ~50km (đường núi)
+
+## Thông tin tuyến (DEMO)
+
+| Thông tin | Giá trị |
+|-----------|----------|
+| Giờ khởi hành | [Sẽ được cập nhật] |
+| Giá vé | [Sẽ được cập nhật] |
+| Thời gian di chuyển | [Sẽ được cập nhật] |
+| Tần suất | [Sẽ được cập nhật] |
+
+## Đặc điểm tuyến
+
+- Tuyến đường miền núi
+- Cảnh quan đẹp, đặc biệt vào mùa lúa chín
+- Thời gian di chuyển phụ thuộc điều kiện thời tiết và đường sá
+
+## Lưu ý quan trọng
+
+**Thông tin về ghế trống, lịch trình cụ thể** → Xem trong hệ thống / Database.
+
+Ví dụ:
+- "Chuyến ngày mai còn mấy ghế?" → **Database/TripTools**
+- "Giờ khởi hành tuyến Tà Xùa?" → **Database/TripTools**
+
+**Knowledge về tuyến đường** → RAG.
+
+Ví dụ:
+- "Nhà xe có chạy tuyến nào?" → **RAG**
+- "Tà Xùa thuộc tỉnh nào?" → **RAG**
+
+## Cập nhật thông tin
+
+Thông tin lịch trình, giá vé, số ghế... được cập nhật trực tiếp vào hệ thống quản lý.
+Không lấy từ tài liệu này.

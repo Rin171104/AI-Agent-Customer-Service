@@ -1,77 +1,105 @@
 # Câu Hỏi Thường Gặp (FAQ)
 
-**DEMO DATA - Không phải dữ liệu chính thức**
+**DEMO DATA - FAQ mẫu**
 
-## Đặt vé
+> **Lưu ý**: Các câu trả lời chi tiết về policy nằm ở các file riêng:
+> - booking_policy.md
+> - cancellation_policy.md
+> - refund_policy.md
+> - payment_policy.md
 
-**Q: Làm sao để đặt vé?**
-A: Bạn có thể đặt vé qua AI Chat trên website/app hoặc gọi hotline 1900 xxxx.
+## Về tuyến xe
 
-**Q: Tôi có thể đặt vé trước bao lâu?**
-A: Có thể đặt vé trước từ 1 ngày đến 30 ngày.
+**H: Nhà xe chạy tuyến nào?**
+T: Nhà xe Hiền Hựu hoạt động trên tuyến Hà Nội - Bắc Yên - Tà Xùa.
 
-**Q: Có cần đăng ký tài khoản không?**
-A: Không bắt buộc. Bạn có thể đặt vé với tư cách khách.
+**H: Tà Xùa thuộc tỉnh nào?**
+T: Tà Xùa thuộc huyện Bắc Yên, tỉnh Sơn La.
 
-## Thanh toán
+**H: Từ Hà Nội đi Tà Xùa mất bao lâu?**
+T: Thời gian di chuyển phụ thuộc vào điều kiện đường sá và thời tiết. Vui lòng kiểm tra lịch trình cụ thể trong hệ thống.
 
-**Q: Tôi có thể thanh toán bằng cách nào?**
-A: Chuyển khoản ngân hàng, ví điện tử (MoMo, ZaloPay, VNPay).
+## Về đặt vé
 
-**Q: Thanh toán xong trong bao lâu thì được xác nhận?**
-A: Thường trong 5-30 phút. Nếu sau 30 phút chưa xác nhận, vui lòng liên hệ hotline.
+**H: Làm sao để đặt vé?**
+T: Bạn có thể đặt vé qua AI Chat trên website/app hoặc liên hệ trực tiếp.
 
-**Q: Tôi chuyển khoản nhầm số tiền thì sao?**
-A: Liên hệ hotline để được hỗ trợ điều chỉnh.
+**H: Tôi cần cung cấp thông tin gì khi đặt vé?**
+T: Họ tên, số điện thoại, điểm đón, điểm trả, ngày khởi hành, số ghế.
 
-## Hủy vé
+**H: Đặt vé trước bao lâu?**
+T: Có thể đặt trước [Số ngày sẽ được cập nhật].
 
-**Q: Tôi có thể hủy vé không?**
-A: Có, bạn có thể hủy vé theo chính sách hủy vé.
+**H: Có cần đăng ký tài khoản không?**
+T: Không bắt buộc. Bạn có thể đặt vé với tư cách khách.
 
-**Q: Hủy vé có mất phí không?**
-A: Có, phí hủy từ 0% đến 50% tùy thời điểm hủy.
+## Về thanh toán
 
-**Q: Tiền hoàn sẽ được chuyển trong bao lâu?**
-A: Thường 3-7 ngày làm việc.
+**H: Tôi có thể thanh toán bằng cách nào?**
+T: Các phương thức thanh toán được hỗ trợ: Chuyển khoản, Ví điện tử, Thanh toán tại quầy. Chi tiết trong payment_policy.md.
 
-## Hoàn tiền
+**H: Thanh toán xong trong bao lâu thì được xác nhận?**
+T: Thường trong vài phút đến 30 phút.
 
-**Q: Khi nào tôi được hoàn tiền?**
-A: Khi hủy vé đúng hạn, hoặc khi yêu cầu hoàn tiền được chấp thuận.
+**H: Tôi chuyển khoản nhầm số tiền thì sao?**
+T: Liên hệ hỗ trợ để được điều chỉnh.
 
-**Q: Tôi cần cung cấp thông tin gì để nhận hoàn tiền?**
-A: Số tài khoản, tên ngân hàng, tên chủ tài khoản (phải trùng với tên đặt vé).
+## Về hủy vé
 
-**Q: Hoàn tiền cho ai?**
-A: Chỉ hoàn tiền cho tài khoản mang tên người đặt vé.
+**H: Tôi có thể hủy vé không?**
+T: Có, bạn có thể hủy vé theo chính sách hủy vé. Chi tiết trong cancellation_policy.md.
 
-## Chuyến xe
+**H: Hủy vé có mất phí không?**
+T: Có, phí hủy phụ thuộc vào thời điểm hủy. Xem bảng phí trong cancellation_policy.md.
 
-**Q: Xe có đón tận nơi không?**
-A: Có thể, trong nội thành TP.HCM. Có thể phát sinh phí phụ thu.
+**H: Tiền hoàn sẽ được chuyển trong bao lâu?**
+T: Sau khi hủy và được duyệt, tiền hoàn sẽ được xử lý trong [Số ngày sẽ được cập nhật].
 
-**Q: Xe có wifi không?**
-A: Tùy chuyến xe. Vui lòng hỏi khi đặt vé.
+## Về hoàn tiền
 
-**Q: Xe có ổ cắm sạc không?**
-A: Hầu hết các xe đời mới đều có ổ cắm sạc USB.
+**H: Khi nào tôi được hoàn tiền?**
+T: Khi hủy vé đúng hạn (theo bảng phí), hoặc khi yêu cầu hoàn tiền được chấp thuận.
 
-**Q: Tôi có thể mang theo bao nhiêu hành lý?**
-A: Tối đa 20kg hành lý miễn phí/người.
+**H: Ai duyệt hoàn tiền?**
+T: Owner (người quản lý nhà xe) sẽ xem xét và duyệt hoàn tiền. AI chỉ tiếp nhận yêu cầu, không tự quyết định hoàn tiền.
 
-## Khiếu nại
+**H: Hoàn tiền cho ai?**
+T: Chỉ hoàn tiền cho tài khoản mang tên người đặt vé.
 
-**Q: Tôi muốn khiếu nại thì làm sao?**
-A: Gửi khiếu nại qua AI Chat hoặc hotline. Chúng tôi sẽ phản hồi trong 24 giờ.
+**H: Tôi cần cung cấp thông tin gì để nhận hoàn tiền?**
+T: Số tài khoản, tên ngân hàng, tên chủ tài khoản (phải trùng với tên đặt vé).
 
-**Q: Thời gian xử lý khiếu nại là bao lâu?**
-A: Thường 1-3 ngày làm việc.
+## Về khiếu nại
+
+**H: Tôi muốn khiếu nại thì làm sao?**
+T: Gửi khiếu nại qua AI Chat hoặc liên hệ trực tiếp. Chúng tôi sẽ phản hồi trong thời gian sớm nhất.
+
+**H: Thời gian xử lý khiếu nại là bao lâu?**
+T: Thường [Số ngày sẽ được cập nhật] ngày làm việc.
+
+## Về điểm đón/trả
+
+**H: Xe có đón tận nơi không?**
+T: Nhà xe hỗ trợ đón tại các điểm trên tuyến. Vui lòng xem chi tiết trong pickup_dropoff.md.
+
+**H: Điểm đón trả trên tuyến Hà Nội - Tà Xùa?**
+T: Các điểm đón/trả được hỗ trợ: Hà Nội, Bắc Yên, Tà Xùa và một số điểm trung gian.
 
 ## Khác
 
-**Q: Tôi quên mã booking thì sao?**
-A: Cung cấp số điện thoại đã đặt, chúng tôi sẽ tra cứu.
+**H: Tôi quên mã booking thì sao?**
+T: Cung cấp số điện thoại đã đặt, chúng tôi sẽ tra cứu.
 
-**Q: Tôi muốn đổi sang chuyến khác thì sao?**
-A: Liên hệ hotline để được hỗ trợ đổi chuyến (tùy tình trạng ghế trống).
+**H: Tôi muốn đổi sang chuyến khác thì sao?**
+T: Liên hệ để được hỗ trợ đổi chuyến (tùy tình trạng ghế trống).
+
+## Phân biệt nguồn thông tin
+
+| Câu hỏi | Nguồn |
+|---------|--------|
+| Nhà xe có tuyến nào? | RAG |
+| Chuyến ngày mai còn ghế không? | Database/Tools |
+| Chính sách hoàn tiền? | RAG |
+| Refund BK001 đang ở đâu? | Database/Tools |
+| Booking của tôi đã thanh toán chưa? | Database/Tools |
+| Tôi có được hoàn tiền không? | RAG + Database |
