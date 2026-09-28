@@ -8,11 +8,15 @@ Xử lý các nghiệp vụ:
     - Xem trạng thái hoàn tiền
 
 Kiến trúc:
-    Customer -> Orchestrator -> ComplaintAgent -> Tools -> Services -> Database
+    Customer -> Orchestrator -> ComplaintAgent -> Tools/RAG -> Services -> Database
 
 Quyền:
     - Customer: Tạo complaint, xem complaint của mình, tạo refund request, xem refund của mình
     - Owner: Duyệt/refund (NOT trong scope của Agent này)
+
+RAG Integration:
+    - Policy queries -> RAG
+    - Realtime queries -> Tools
 """
 import re
 from typing import Dict, Any, Optional, List
@@ -23,6 +27,7 @@ from src.ai.tools.complaint_tools import ComplaintTools
 from src.ai.tools.refund_tools import RefundTools
 from src.ai.tools.booking_tools import BookingTools
 from src.ai.tools.payment_tools import PaymentTools
+from src.ai.rag.rag_tools import RAGTools
 from src.utils.logger import logger
 
 
@@ -105,6 +110,17 @@ class ComplaintAgent:
             r"^các\s+yêu\s*cầu\s+hoàn",
             r"liệt\s*kê\s+hoàn\s*tiền",
         ],
+        # Knowledge queries - should use RAG
+        "knowledge": [
+            r"chính\s*sách\s+hủy",
+            r"phí\s+hủy",
+            r"hoàn\s+tiền\s+(khi\s+nào|bao\s+lâu|là\s+gì)",
+            r"điều\s+kiện\s+hoàn",
+            r"hủy\s+vé\s+được\s+hoàn",
+            r"bao\s+lâu\s+nhận\s+được\s+tiền",
+            r"quy\s+trình\s+hoàn",
+            r"ai\s+(duyệt|phê\s+duyệt)",
+        ],
     }
 
     # Complaint types mapping
@@ -124,6 +140,7 @@ class ComplaintAgent:
         self.refund_tools = RefundTools()
         self.booking_tools = BookingTools()
         self.payment_tools = PaymentTools()
+        self.rag_tools = RAGTools()
         self.logger = logger
 
     def detect_intent(self, message: str) -> str:
@@ -237,6 +254,8 @@ class ComplaintAgent:
                 result = await self._handle_get_refund(db, state, entities)
             elif intent == "get_my_refunds":
                 result = await self._handle_get_my_refunds(db, state)
+            elif intent == "knowledge":
+                result = await self._handle_knowledge(state, message)
             else:
                 result = await self._handle_unknown(state, message)
 
@@ -459,6 +478,28 @@ class ComplaintAgent:
         booking_id = entities.get("booking_id") or state.booking_id
         booking_code = entities.get("booking_code") or state.context.get("booking_code")
 
+        # Check if user is asking about refund policy (not a specific request)
+        if "chính sách" in message.lower() or "điều kiện" in message.lower() or "phí" in message.lower():
+            # This is a policy query - use RAG
+            rag_result = self.rag_tools.search_knowledge("chính sách hoàn tiền hủy vé phí")
+            if rag_result.get("success"):
+                response = self.rag_tools.format_response(
+                    query=message,
+                    result=rag_result,
+                    include_source=True
+                )
+                return {
+                    "success": True,
+                    "response": response,
+                    "data": {"source": "RAG", "results": rag_result.get("results", [])}
+                }
+            else:
+                return {
+                    "success": True,
+                    "response": "Tôi chưa tìm thấy thông tin về chính sách hoàn tiền.",
+                    "data": {"source": "RAG"}
+                }
+
         # Lấy booking_id từ code nếu có
         if booking_code and not booking_id:
             booking_result = await self.booking_tools.get_booking(
@@ -515,11 +556,21 @@ class ComplaintAgent:
 
         # Nếu thiếu thông tin, yêu cầu cung cấp
         if not bank_name or not account_number or not account_holder:
+            # Get refund policy from RAG to inform the user
+            rag_result = self.rag_tools.search_knowledge("chính sách hoàn tiền thông tin tài khoản")
+            policy_info = ""
+            if rag_result.get("success"):
+                policy_info = "\n\nTheo chính sách hoàn tiền:\n" + self.rag_tools.format_response(
+                    query="thông tin cần cung cấp để nhận hoàn tiền",
+                    result=rag_result,
+                    include_source=False
+                )
+
             response = f"Để yêu cầu hoàn tiền cho booking {booking.get('booking_code')}, vui lòng cung cấp:\n"
             response += f"- Số tiền muốn hoàn (mặc định: {amount:,} VND)\n"
             response += f"- Tên ngân hàng\n"
             response += f"- Số tài khoản\n"
-            response += f"- Tên chủ tài khoản\n"
+            response += f"- Tên chủ tài khoản (phải trùng với tên đặt vé){policy_info}\n"
             response += f"\nVí dụ: 'Hoàn tiền BK123456, 200000 VND, Vietcombank, 1234567890, Nguyễn Văn A'"
 
             return {
@@ -567,7 +618,8 @@ class ComplaintAgent:
         response += f"- Ngân hàng: {refund.get('bank_name')}\n"
         response += f"- STK: {refund.get('account_number')}\n"
         response += f"- Trạng thái: Chờ phê duyệt\n\n"
-        response += "Yêu cầu của bạn đang chờ nhà xe xem xét và phê duyệt.\n"
+        response += "Yêu cầu của bạn đang chờ nhà xe (Owner) xem xét và phê duyệt.\n"
+        response += "Chỉ có Owner mới có quyền phê duyệt và thực hiện hoàn tiền.\n"
         response += "Bạn sẽ được thông báo khi có kết quả."
 
         # IMPORTANT: requires_human = true vì Owner cần approve
@@ -680,19 +732,63 @@ class ComplaintAgent:
             "tool_result": result
         }
 
+    async def _handle_knowledge(
+        self,
+        state: ComplaintState,
+        message: str
+    ) -> Dict[str, Any]:
+        """
+        Xử lý knowledge query - dùng RAG.
+
+        IMPORTANT:
+        - Chỉ dùng RAG cho policy/knowledge tổng quát
+        - KHÔNG dùng RAG cho realtime data (refund status, booking status)
+        """
+        # Search knowledge base
+        rag_result = self.rag_tools.search_knowledge(message)
+
+        if not rag_result.get("success"):
+            return {
+                "success": True,
+                "response": rag_result.get("response", "Tôi chưa tìm thấy thông tin phù hợp."),
+                "data": {"source": "RAG", "results": []}
+            }
+
+        # Format response
+        response = self.rag_tools.format_response(
+            query=message,
+            result=rag_result,
+            include_source=True
+        )
+
+        return {
+            "success": True,
+            "response": response,
+            "data": {
+                "source": "RAG",
+                "results": rag_result.get("results", []),
+                "sources": rag_result.get("sources", [])
+            }
+        }
+
     async def _handle_unknown(
         self,
         state: ComplaintState,
         message: str
     ) -> Dict[str, Any]:
         """Xử lý intent không xác định"""
+        # Try to detect if this is a knowledge query
+        if self.rag_tools.should_use_rag(message):
+            return await self._handle_knowledge(state, message)
+
         return {
             "success": True,
             "response": "Tôi có thể giúp bạn:\n"
                        "- Tạo khiếu nại: 'Tôi muốn khiếu nại về chuyến xe'\n"
                        "- Xem khiếu nại: 'Xem khiếu nại của tôi'\n"
                        "- Yêu cầu hoàn tiền: 'Tôi muốn hoàn tiền booking BK001'\n"
-                       "- Xem hoàn tiền: 'Xem trạng thái hoàn tiền'\n\n"
+                       "- Xem hoàn tiền: 'Xem trạng thái hoàn tiền'\n"
+                       "- Hỏi về chính sách: 'chính sách hoàn tiền thế nào?'\n\n"
                        "Bạn cần hỗ trợ gì?",
             "next_action": "help"
         }

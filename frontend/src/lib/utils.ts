@@ -9,6 +9,16 @@ export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('vi-VN').format(amount) + ' VND'
 }
 
+export function formatCurrencyShort(amount: number): string {
+  if (amount >= 1000000) {
+    return (amount / 1000000).toFixed(1) + 'M'
+  }
+  if (amount >= 1000) {
+    return (amount / 1000).toFixed(0) + 'K'
+  }
+  return amount.toString()
+}
+
 export function formatDate(date: string): string {
   return new Date(date).toLocaleDateString('vi-VN', {
     year: 'numeric',
@@ -27,24 +37,32 @@ export function formatDateTime(date: string): string {
   })
 }
 
+export function formatTime(date: string): string {
+  return new Date(date).toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export function getStatusColor(status: string): string {
   const colors: Record<string, string> = {
-    PENDING_PAYMENT: 'bg-yellow-100 text-yellow-800',
-    CONFIRMED: 'bg-green-100 text-green-800',
-    CANCELLED: 'bg-red-100 text-red-800',
-    PAID: 'bg-green-100 text-green-800',
-    PENDING: 'bg-yellow-100 text-yellow-800',
-    FAILED: 'bg-red-100 text-red-800',
-    OPEN: 'bg-blue-100 text-blue-800',
-    IN_PROGRESS: 'bg-orange-100 text-orange-800',
-    RESOLVED: 'bg-green-100 text-green-800',
-    WAITING_OWNER_APPROVAL: 'bg-yellow-100 text-yellow-800',
-    APPROVED: 'bg-green-100 text-green-800',
-    REJECTED: 'bg-red-100 text-red-800',
-    REFUNDED: 'bg-purple-100 text-purple-800',
-    ACTIVE: 'bg-green-100 text-green-800',
+    PENDING_PAYMENT: 'bg-amber-50 text-amber-700 border-amber-200',
+    CONFIRMED: 'bg-green-50 text-green-700 border-green-200',
+    CANCELLED: 'bg-red-50 text-red-700 border-red-200',
+    PAID: 'bg-green-50 text-green-700 border-green-200',
+    PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+    FAILED: 'bg-red-50 text-red-700 border-red-200',
+    OPEN: 'bg-blue-50 text-blue-700 border-blue-200',
+    IN_PROGRESS: 'bg-orange-50 text-orange-700 border-orange-200',
+    RESOLVED: 'bg-green-50 text-green-700 border-green-200',
+    WAITING_OWNER_APPROVAL: 'bg-amber-50 text-amber-700 border-amber-200',
+    APPROVED: 'bg-green-50 text-green-700 border-green-200',
+    REJECTED: 'bg-red-50 text-red-700 border-red-200',
+    REFUNDED: 'bg-purple-50 text-purple-700 border-purple-200',
+    ACTIVE: 'bg-green-50 text-green-700 border-green-200',
+    REQUESTED: 'bg-blue-50 text-blue-700 border-blue-200',
   }
-  return colors[status] || 'bg-gray-100 text-gray-800'
+  return colors[status] || 'bg-neutral-100 text-neutral-700 border-neutral-200'
 }
 
 export function getStatusText(status: string): string {
@@ -63,6 +81,7 @@ export function getStatusText(status: string): string {
     REJECTED: 'Từ chối',
     REFUNDED: 'Đã hoàn tiền',
     ACTIVE: 'Hoạt động',
+    REQUESTED: 'Đã gửi',
   }
   return texts[status] || status
 }

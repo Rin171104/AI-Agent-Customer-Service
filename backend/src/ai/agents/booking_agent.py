@@ -12,7 +12,11 @@ Xử lý các nghiệp vụ:
     - Kiểm tra trạng thái payment
 
 Kiến trúc:
-    Customer -> BookingAgent -> Tools -> Services -> Database
+    Customer -> BookingAgent -> Tools/RAG -> Services -> Database
+
+RAG Integration:
+    - Knowledge queries -> RAG
+    - Realtime queries -> Tools
 """
 import re
 from typing import Dict, Any, Optional, List
@@ -23,6 +27,7 @@ from uuid import UUID
 from src.ai.tools.trip_tools import TripTools
 from src.ai.tools.booking_tools import BookingTools
 from src.ai.tools.payment_tools import PaymentTools
+from src.ai.rag.rag_tools import RAGTools
 from src.utils.logger import logger
 
 
@@ -134,12 +139,30 @@ class BookingAgent:
             r"tất.*cả.*booking",
             r"các.*vé.*đã.*đặt",
         ],
+        # Knowledge queries - should use RAG
+        "knowledge": [
+            r"nhà\s+xe\s+(có|là|gì)",
+            r"tuyến\s+nào",
+            r"thông tin.*nhà\s+xe",
+            r"chính\s+sách.*đặt\s*vé",
+            r"quy\s+trình.*đặt",
+            r"cách\s+đặt\s*vé",
+            r"phải.*cung\s*cấp.*gì",
+            r"điểm.*đón.*ở",
+            r"điểm.*trả.*ở",
+            r"liên\s+hệ.*nhà\s+xe",
+            r"hotline",
+            r"giờ.*làm.*việc",
+            r"tà\s*xùa.*thuộc",
+            r"hà\s+nội.*thuộc",
+        ],
     }
 
     def __init__(self):
         self.trip_tools = TripTools()
         self.booking_tools = BookingTools()
         self.payment_tools = PaymentTools()
+        self.rag_tools = RAGTools()
         self.logger = logger
 
     def detect_intent(self, message: str) -> str:
@@ -285,6 +308,8 @@ class BookingAgent:
                 result = await self._handle_check_payment(db, state, entities)
             elif intent == "get_my_bookings":
                 result = await self._handle_get_my_bookings(db, state)
+            elif intent == "knowledge":
+                result = await self._handle_knowledge(state, message)
             else:
                 result = await self._handle_unknown(db, state, message)
 
@@ -920,6 +945,45 @@ class BookingAgent:
             "tool_result": result
         }
 
+    async def _handle_knowledge(
+        self,
+        state: BookingState,
+        message: str
+    ) -> Dict[str, Any]:
+        """
+        Xử lý knowledge query - dùng RAG.
+
+        IMPORTANT:
+        - Chỉ dùng RAG cho policy/knowledge tổng quát
+        - KHÔNG dùng RAG cho realtime data (ghế, booking, payment)
+        """
+        # Search knowledge base
+        rag_result = self.rag_tools.search_knowledge(message)
+
+        if not rag_result.get("success"):
+            return {
+                "success": True,
+                "response": rag_result.get("response", "Tôi chưa tìm thấy thông tin phù hợp."),
+                "data": {"source": "RAG", "results": []}
+            }
+
+        # Format response
+        response = self.rag_tools.format_response(
+            query=message,
+            result=rag_result,
+            include_source=True
+        )
+
+        return {
+            "success": True,
+            "response": response,
+            "data": {
+                "source": "RAG",
+                "results": rag_result.get("results", []),
+                "sources": rag_result.get("sources", [])
+            }
+        }
+
     async def _handle_unknown(
         self,
         db: Any,
@@ -927,6 +991,10 @@ class BookingAgent:
         message: str
     ) -> Dict[str, Any]:
         """Xử lý khi không nhận diện được intent"""
+        # Try to detect if this is a knowledge query
+        if self.rag_tools.should_use_rag(message):
+            return await self._handle_knowledge(state, message)
+
         # Try to help based on context
         if state.context.get("available_trips"):
             return {
@@ -943,11 +1011,12 @@ class BookingAgent:
         return {
             "success": True,
             "response": "Xin chào! Tôi có thể giúp bạn:\n"
-                       "- Tìm chuyến xe: 'tìm xe đi Đà Lạt'\n"
-                       "- Đặt vé: 'đặt 2 vé đi Tà Xùa'\n"
+                       "- Tìm chuyến xe: 'tìm xe đi Tà Xùa'\n"
+                       "- Đặt vé: 'đặt 2 vé đi Hà Nội'\n"
                        "- Xem booking: 'xem vé của tôi'\n"
                        "- Thanh toán: 'thanh toán'\n"
                        "- Hủy vé: 'hủy vé'\n\n"
+                       "- Hỏi về chính sách: 'chính sách đặt vé thế nào?'\n\n"
                        "Bạn cần hỗ trợ gì?",
             "next_action": "greeting"
         }
