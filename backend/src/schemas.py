@@ -286,6 +286,36 @@ class DashboardStats(BaseModel):
     pending_refunds: int
 
 
+class BookingByDay(BaseModel):
+    date: str
+    count: int
+
+
+class RevenueByDay(BaseModel):
+    date: str
+    revenue: int
+
+
+class BookingByRoute(BaseModel):
+    route: str
+    origin: str
+    destination: str
+    count: int
+
+
+class BookingByStatus(BaseModel):
+    status: str
+    count: int
+    percentage: float
+
+
+class ChartData(BaseModel):
+    bookings_by_day: List[BookingByDay]
+    revenue_by_day: List[RevenueByDay]
+    bookings_by_route: List[BookingByRoute]
+    bookings_by_status: List[BookingByStatus]
+
+
 # Forward references
 BookingDetailResponse.model_rebuild()
 ComplaintDetailResponse.model_rebuild()

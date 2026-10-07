@@ -89,6 +89,38 @@ export const auditApi = {
 // Dashboard
 export const dashboardApi = {
   getStats: () => api.get<DashboardStats>('/dashboard/stats'),
+  getChartData: (days: number = 7) => api.get<ChartData>('/dashboard/chart-data', { params: { days } }),
+}
+
+// Chart Data Types
+export interface BookingByDay {
+  date: string
+  count: number
+}
+
+export interface RevenueByDay {
+  date: string
+  revenue: number
+}
+
+export interface BookingByRoute {
+  route: string
+  origin: string
+  destination: string
+  count: number
+}
+
+export interface BookingByStatus {
+  status: string
+  count: number
+  percentage: number
+}
+
+export interface ChartData {
+  bookings_by_day: BookingByDay[]
+  revenue_by_day: RevenueByDay[]
+  bookings_by_route: BookingByRoute[]
+  bookings_by_status: BookingByStatus[]
 }
 
 export default api

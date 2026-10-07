@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Bus,
   Ticket,
@@ -10,25 +11,50 @@ import {
   Sparkles,
   Calendar,
   ChevronRight,
+  Search,
+  MapPin,
+  CalendarCheck,
 } from 'lucide-react'
 import { useAuth } from '../../services/auth'
-import { bookingApi } from '../../services/api'
+import { bookingApi, tripApi } from '../../services/api'
 import { formatCurrency, formatDateTime, getStatusColor, getStatusText } from '../../lib/utils'
 import AIChat from '../../components/AIChat'
-import { useState } from 'react'
 
 export default function CustomerDashboard() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [chatOpen, setChatOpen] = useState(false)
+  const [searchOrigin, setSearchOrigin] = useState('')
+  const [searchDestination, setSearchDestination] = useState('')
 
-  const { data: bookings, isLoading } = useQuery({
+  const { data: bookings, isLoading: bookingsLoading } = useQuery({
     queryKey: ['my-bookings'],
     queryFn: () => bookingApi.getMyBookings().then((res) => res.data),
+  })
+
+  const { data: trips } = useQuery({
+    queryKey: ['trips-search', searchOrigin, searchDestination],
+    queryFn: () =>
+      tripApi
+        .getAll({
+          origin: searchOrigin || undefined,
+          destination: searchDestination || undefined,
+        })
+        .then((res) => res.data.slice(0, 3)),
+    enabled: !searchOrigin && !searchDestination ? false : true,
   })
 
   const activeBookings = bookings?.filter((b) => b.status === 'CONFIRMED') || []
   const pendingPayments = bookings?.filter((b) => b.status === 'PENDING_PAYMENT') || []
   const upcomingBookings = activeBookings.slice(0, 2)
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const params = new URLSearchParams()
+    if (searchOrigin) params.set('origin', searchOrigin)
+    if (searchDestination) params.set('destination', searchDestination)
+    navigate(`/customer/trips?${params.toString()}`)
+  }
 
   return (
     <div className="space-y-6">
@@ -58,6 +84,87 @@ export default function CustomerDashboard() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Quick Search */}
+      <div className="bg-white rounded-2xl p-6 shadow-card">
+        <h2 className="text-lg font-bold text-neutral-900 mb-4 flex items-center gap-2">
+          <Search size={20} className="text-primary-600" />
+          Tìm chuyến xe
+        </h2>
+        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
+                <MapPin size={18} />
+              </div>
+              <input
+                type="text"
+                value={searchOrigin}
+                onChange={(e) => setSearchOrigin(e.target.value)}
+                placeholder="Điểm đi"
+                className="input pl-11"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
+              <ArrowRight className="text-primary-600 rotate-90" size={20} />
+            </div>
+          </div>
+          <div className="flex-1">
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
+                <MapPin size={18} />
+              </div>
+              <input
+                type="text"
+                value={searchDestination}
+                onChange={(e) => setSearchDestination(e.target.value)}
+                placeholder="Điểm đến"
+                className="input pl-11"
+              />
+            </div>
+          </div>
+          <button type="submit" className="btn-primary px-8">
+            Tìm kiếm
+          </button>
+        </form>
+
+        {/* Quick results */}
+        {trips && trips.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-neutral-100">
+            <p className="text-sm text-neutral-500 mb-3">Kết quả nhanh:</p>
+            <div className="space-y-2">
+              {trips.map((trip) => (
+                <Link
+                  key={trip.id}
+                  to={`/customer/trips/${trip.id}`}
+                  className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium text-neutral-900">
+                      {trip.origin} → {trip.destination}
+                    </p>
+                    <p className="text-sm text-neutral-500">
+                      {trip.departure_time} • {trip.available_seats} ghế trống
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-primary-600">{formatCurrency(trip.price)}</p>
+                    <ChevronRight size={16} className="text-neutral-400 ml-auto" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <Link
+              to={`/customer/trips?origin=${searchOrigin}&destination=${searchDestination}`}
+              className="text-sm text-primary-600 font-medium mt-3 inline-flex items-center gap-1"
+            >
+              Xem tất cả chuyến <ArrowRight size={14} />
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Stats cards */}
@@ -101,8 +208,8 @@ export default function CustomerDashboard() {
               <MessageSquare className="text-red-600" size={20} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-neutral-900">0</p>
-              <p className="text-sm text-neutral-500">Khiếu nại đang xử lý</p>
+              <p className="text-2xl font-bold text-neutral-900">{bookings?.length || 0}</p>
+              <p className="text-sm text-neutral-500">Tổng booking</p>
             </div>
           </div>
         </div>
@@ -151,7 +258,7 @@ export default function CustomerDashboard() {
           className="group bg-white rounded-xl p-5 border border-neutral-100 hover:border-primary-200 hover:shadow-soft transition-all duration-200"
         >
           <div className="w-12 h-12 rounded-xl bg-primary-50 group-hover:bg-primary-100 flex items-center justify-center mb-4 transition-colors">
-            <SearchIcon className="text-primary-600" size={24} />
+            <Search className="text-primary-600" size={24} />
           </div>
           <h3 className="font-semibold text-neutral-900">Tìm chuyến</h3>
           <p className="text-sm text-neutral-500 mt-1">Tìm và đặt vé xe</p>
@@ -167,6 +274,16 @@ export default function CustomerDashboard() {
           <p className="text-sm text-neutral-500 mt-1">Quản lý đặt vé</p>
         </Link>
         <Link
+          to="/customer/complaints"
+          className="group bg-white rounded-xl p-5 border border-neutral-100 hover:border-orange-200 hover:shadow-soft transition-all duration-200"
+        >
+          <div className="w-12 h-12 rounded-xl bg-orange-50 group-hover:bg-orange-100 flex items-center justify-center mb-4 transition-colors">
+            <MessageSquare className="text-orange-600" size={24} />
+          </div>
+          <h3 className="font-semibold text-neutral-900">Khiếu nại</h3>
+          <p className="text-sm text-neutral-500 mt-1">Phản ánh vấn đề</p>
+        </Link>
+        <Link
           to="/customer/refunds"
           className="group bg-white rounded-xl p-5 border border-neutral-100 hover:border-purple-200 hover:shadow-soft transition-all duration-200"
         >
@@ -176,22 +293,15 @@ export default function CustomerDashboard() {
           <h3 className="font-semibold text-neutral-900">Hoàn tiền</h3>
           <p className="text-sm text-neutral-500 mt-1">Yêu cầu hoàn tiền</p>
         </Link>
-        <button
-          onClick={() => setChatOpen(true)}
-          className="group bg-gradient-to-br from-primary-50 to-accent-50 rounded-xl p-5 border border-primary-100 hover:border-primary-200 hover:shadow-soft transition-all duration-200 text-left"
-        >
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mb-4">
-            <Sparkles className="text-white" size={24} />
-          </div>
-          <h3 className="font-semibold text-neutral-900">Hỏi AI</h3>
-          <p className="text-sm text-neutral-500 mt-1">Trợ lý 24/7</p>
-        </button>
       </div>
 
       {/* Upcoming trips */}
-      <div className="card">
+      <div className="bg-white rounded-2xl p-6 shadow-card">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-neutral-900">Chuyến sắp tới</h2>
+          <h2 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
+            <CalendarCheck className="text-primary-600" size={20} />
+            Chuyến sắp tới
+          </h2>
           <Link
             to="/customer/bookings"
             className="text-sm text-primary-600 font-medium hover:text-primary-700 flex items-center gap-1"
@@ -200,7 +310,7 @@ export default function CustomerDashboard() {
           </Link>
         </div>
 
-        {isLoading ? (
+        {bookingsLoading ? (
           <div className="space-y-4">
             {[1, 2].map((i) => (
               <div key={i} className="animate-pulse">
@@ -209,16 +319,13 @@ export default function CustomerDashboard() {
             ))}
           </div>
         ) : upcomingBookings.length === 0 ? (
-          <div className="empty-state py-12">
-            <div className="empty-state-icon">
-              <Bus size={32} />
+          <div className="text-center py-12">
+            <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+              <Bus size={32} className="text-neutral-400" />
             </div>
-            <p className="empty-state-title">Chưa có chuyến nào</p>
-            <p className="empty-state-description">Đặt vé ngay để trải nghiệm dịch vụ</p>
-            <Link
-              to="/customer/trips"
-              className="btn-primary mt-4"
-            >
+            <p className="text-lg font-medium text-neutral-700">Chưa có chuyến nào</p>
+            <p className="text-sm text-neutral-500 mt-1">Đặt vé ngay để trải nghiệm dịch vụ</p>
+            <Link to="/customer/trips" className="btn-primary mt-4">
               Tìm chuyến ngay
             </Link>
           </div>
@@ -270,39 +377,12 @@ export default function CustomerDashboard() {
       {/* AI Chat Modal */}
       {chatOpen && (
         <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black/30"
-            onClick={() => setChatOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/30" onClick={() => setChatOpen(false)} />
           <div className="absolute bottom-0 right-0 w-full h-[calc(100vh-4rem)] lg:w-96 lg:h-[32rem] lg:rounded-t-2xl shadow-elevated">
-            <AIChat
-              context="customer"
-              embedded
-              onClose={() => setChatOpen(false)}
-            />
+            <AIChat context="customer" embedded onClose={() => setChatOpen(false)} />
           </div>
         </div>
       )}
     </div>
-  )
-}
-
-// Search icon component
-function SearchIcon({ className, size = 24 }: { className?: string; size?: number }) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
   )
 }
