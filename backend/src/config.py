@@ -2,11 +2,11 @@
 Cấu hình ứng dụng - đọc từ .env
 """
 import json
+
 from pydantic_settings import BaseSettings
-from typing import List, Union
 
 
-def parse_list(v: Union[str, List[str]]) -> List[str]:
+def parse_list(v: str | list[str]) -> list[str]:
     """Parse list từ JSON string hoặc list"""
     if isinstance(v, list):
         return v
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
 
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
     # Logging
     LOG_LEVEL: str = "INFO"

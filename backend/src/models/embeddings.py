@@ -1,7 +1,6 @@
 """
 Embeddings - Text embedding utilities
 """
-from typing import List, Optional
 from abc import ABC, abstractmethod
 
 from src.utils.config import settings
@@ -12,14 +11,12 @@ class EmbeddingProvider(ABC):
     """Abstract base class for embedding providers."""
 
     @abstractmethod
-    async def embed(self, text: str) -> List[float]:
+    async def embed(self, text: str) -> list[float]:
         """Generate embedding for text."""
-        pass
 
     @abstractmethod
-    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for multiple texts."""
-        pass
 
 
 class OpenAIEmbeddings(EmbeddingProvider):
@@ -29,14 +26,14 @@ class OpenAIEmbeddings(EmbeddingProvider):
         self.api_key = api_key
         self.model = model
 
-    async def embed(self, text: str) -> List[float]:
+    async def embed(self, text: str) -> list[float]:
         """Generate embedding using OpenAI."""
         logger.info(f"OpenAI embed: {text[:50]}...")
         # TODO: Implement actual API call
         # Return mock embedding
         return [0.1] * 1536
 
-    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for multiple texts."""
         logger.info(f"OpenAI embed_batch: {len(texts)} texts")
         # TODO: Implement actual API call
@@ -63,10 +60,10 @@ class Embeddings:
         else:
             raise ValueError(f"Unsupported embedding model: {model}")
 
-    async def embed(self, text: str) -> List[float]:
+    async def embed(self, text: str) -> list[float]:
         """Generate embedding for text."""
         return await self.provider.embed(text)
 
-    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for multiple texts."""
         return await self.provider.embed_batch(texts)

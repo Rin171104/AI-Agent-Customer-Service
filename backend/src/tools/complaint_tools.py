@@ -1,9 +1,9 @@
 """
 Complaint Tools - Deterministic operations for complaint domain
 """
-from typing import Dict, Any, List, Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Any
 
 from src.utils.logger import logger
 
@@ -20,13 +20,13 @@ class ComplaintTools:
 
     async def create_complaint(
         self,
-        booking_id: Optional[str],
+        booking_id: str | None,
         complaint_type: str,
         description: str,
         severity: str,
-        customer_id: Optional[str] = None,
-        booking_info: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        customer_id: str | None = None,
+        booking_info: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         Create a new complaint.
 
@@ -60,7 +60,7 @@ class ComplaintTools:
 
         return complaint
 
-    async def get_complaint(self, complaint_id: str) -> Optional[Dict[str, Any]]:
+    async def get_complaint(self, complaint_id: str) -> dict[str, Any] | None:
         """
         Retrieve complaint information.
 
@@ -75,7 +75,7 @@ class ComplaintTools:
         # TODO: Implement actual database query
         return None
 
-    async def get_related_booking(self, booking_id: str) -> Optional[Dict[str, Any]]:
+    async def get_related_booking(self, booking_id: str) -> dict[str, Any] | None:
         """
         Get booking information for complaint context.
 
@@ -100,10 +100,10 @@ class ComplaintTools:
     async def update_complaint(
         self,
         complaint_id: str,
-        status: Optional[str] = None,
-        resolution: Optional[Dict[str, Any]] = None,
+        status: str | None = None,
+        resolution: dict[str, Any] | None = None,
         **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Update complaint status or resolution.
 
@@ -137,10 +137,10 @@ class ComplaintTools:
 
     async def list_complaints(
         self,
-        customer_id: Optional[str] = None,
-        status: Optional[str] = None,
+        customer_id: str | None = None,
+        status: str | None = None,
         limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List complaints with filters.
 

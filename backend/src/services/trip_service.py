@@ -1,9 +1,9 @@
 """
 Trip Service - xử lý nghiệp vụ chuyến xe
 """
-from typing import List, Optional
 from uuid import UUID
-from sqlalchemy import select, and_
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Trip, TripStatus
@@ -16,10 +16,10 @@ class TripService:
     @staticmethod
     async def get_all_trips(
         db: AsyncSession,
-        origin: Optional[str] = None,
-        destination: Optional[str] = None,
-        status: Optional[TripStatus] = None
-    ) -> List[Trip]:
+        origin: str | None = None,
+        destination: str | None = None,
+        status: TripStatus | None = None
+    ) -> list[Trip]:
         """Lấy danh sách tất cả chuyến xe với filter"""
         query = select(Trip)
 
@@ -42,7 +42,7 @@ class TripService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_trip_by_id(db: AsyncSession, trip_id: UUID) -> Optional[Trip]:
+    async def get_trip_by_id(db: AsyncSession, trip_id: UUID) -> Trip | None:
         """Lấy chuyến xe theo ID"""
         result = await db.execute(select(Trip).where(Trip.id == trip_id))
         return result.scalar_one_or_none()
@@ -67,7 +67,7 @@ class TripService:
         return trip
 
     @staticmethod
-    async def update_trip(db: AsyncSession, trip_id: UUID, data: TripUpdate) -> Optional[Trip]:
+    async def update_trip(db: AsyncSession, trip_id: UUID, data: TripUpdate) -> Trip | None:
         """Cập nhật chuyến xe"""
         trip = await TripService.get_trip_by_id(db, trip_id)
         if not trip:
@@ -82,7 +82,7 @@ class TripService:
         return trip
 
     @staticmethod
-    async def cancel_trip(db: AsyncSession, trip_id: UUID) -> Optional[Trip]:
+    async def cancel_trip(db: AsyncSession, trip_id: UUID) -> Trip | None:
         """Hủy chuyến xe"""
         trip = await TripService.get_trip_by_id(db, trip_id)
         if not trip:
@@ -122,8 +122,7 @@ class TripService:
             return False
 
         trip.available_seats += seat_count
-        if trip.available_seats > trip.total_seats:
-            trip.available_seats = trip.total_seats
+        trip.available_seats = min(trip.available_seats, trip.total_seats)
 
         await db.flush()
         return True

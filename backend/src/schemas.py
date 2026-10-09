@@ -2,10 +2,11 @@
 Pydantic schemas cho API
 """
 from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
-from uuid import UUID
 from enum import Enum
+from typing import Optional
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 # ============ ENUMS ============
@@ -73,7 +74,7 @@ class UserRegister(BaseModel):
     email: str = Field(..., min_length=5, max_length=255)
     password: str = Field(..., min_length=6, max_length=100)
     name: str = Field(..., min_length=1, max_length=255)
-    phone: Optional[str] = Field(None, max_length=20)
+    phone: str | None = Field(None, max_length=20)
 
 
 class UserLogin(BaseModel):
@@ -85,7 +86,7 @@ class UserResponse(BaseModel):
     id: UUID
     email: str
     name: str
-    phone: Optional[str]
+    phone: str | None
     role: UserRole
     created_at: datetime
 
@@ -99,7 +100,7 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    user_id: Optional[str] = None
+    user_id: str | None = None
 
 
 # ============ TRIP ============
@@ -114,13 +115,13 @@ class TripCreate(BaseModel):
 
 
 class TripUpdate(BaseModel):
-    route: Optional[str] = Field(None, max_length=255)
-    origin: Optional[str] = Field(None, max_length=255)
-    destination: Optional[str] = Field(None, max_length=255)
-    departure_time: Optional[str] = Field(None, max_length=10)
-    arrival_time: Optional[str] = Field(None, max_length=10)
-    price: Optional[int] = Field(None, gt=0)
-    total_seats: Optional[int] = Field(None, gt=0)
+    route: str | None = Field(None, max_length=255)
+    origin: str | None = Field(None, max_length=255)
+    destination: str | None = Field(None, max_length=255)
+    departure_time: str | None = Field(None, max_length=10)
+    arrival_time: str | None = Field(None, max_length=10)
+    price: int | None = Field(None, gt=0)
+    total_seats: int | None = Field(None, gt=0)
 
 
 class TripResponse(BaseModel):
@@ -173,7 +174,7 @@ class PaymentResponse(BaseModel):
     amount: int
     method: str
     status: PaymentStatus
-    paid_at: Optional[datetime]
+    paid_at: datetime | None
     created_at: datetime
 
     class Config:
@@ -186,27 +187,27 @@ class PaymentSimulate(BaseModel):
 
 # ============ COMPLAINT ============
 class ComplaintCreate(BaseModel):
-    booking_id: Optional[UUID] = None
+    booking_id: UUID | None = None
     type: ComplaintType
     description: str = Field(..., min_length=1)
     priority: ComplaintPriority = ComplaintPriority.MEDIUM
 
 
 class ComplaintUpdate(BaseModel):
-    status: Optional[ComplaintStatus] = None
-    owner_note: Optional[str] = None
+    status: ComplaintStatus | None = None
+    owner_note: str | None = None
 
 
 class ComplaintResponse(BaseModel):
     id: UUID
     complaint_code: str
     customer_id: UUID
-    booking_id: Optional[UUID]
+    booking_id: UUID | None
     type: ComplaintType
     description: str
     status: ComplaintStatus
     priority: ComplaintPriority
-    owner_note: Optional[str]
+    owner_note: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -215,33 +216,33 @@ class ComplaintResponse(BaseModel):
 
 
 class ComplaintDetailResponse(ComplaintResponse):
-    booking: Optional[BookingResponse] = None
+    booking: BookingResponse | None = None
     refund_request: Optional["RefundResponse"] = None
 
 
 # ============ REFUND ============
 class RefundCreate(BaseModel):
-    complaint_id: Optional[UUID] = None
+    complaint_id: UUID | None = None
     booking_id: UUID
     amount: int = Field(..., gt=0)
     bank_name: str = Field(..., min_length=1, max_length=100)
     account_number: str = Field(..., min_length=1, max_length=50)
     account_holder: str = Field(..., min_length=1, max_length=255)
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class RefundResponse(BaseModel):
     id: UUID
     refund_code: str
-    complaint_id: Optional[UUID]
+    complaint_id: UUID | None
     booking_id: UUID
     amount: int
     bank_name: str
     account_number: str
     account_holder: str
-    reason: Optional[str]
+    reason: str | None
     status: RefundStatus
-    owner_note: Optional[str]
+    owner_note: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -250,8 +251,8 @@ class RefundResponse(BaseModel):
 
 
 class RefundDetailResponse(RefundResponse):
-    complaint: Optional[ComplaintResponse] = None
-    booking: Optional[BookingResponse] = None
+    complaint: ComplaintResponse | None = None
+    booking: BookingResponse | None = None
 
 
 class RefundNote(BaseModel):
@@ -262,12 +263,12 @@ class RefundNote(BaseModel):
 class AuditLogResponse(BaseModel):
     id: UUID
     actor_type: ActorType
-    actor_id: Optional[UUID]
+    actor_id: UUID | None
     action: str
     entity_type: str
-    entity_id: Optional[UUID]
-    description: Optional[str]
-    extra_data: Optional[dict]
+    entity_id: UUID | None
+    description: str | None
+    extra_data: dict | None
     created_at: datetime
 
     class Config:
@@ -310,10 +311,10 @@ class BookingByStatus(BaseModel):
 
 
 class ChartData(BaseModel):
-    bookings_by_day: List[BookingByDay]
-    revenue_by_day: List[RevenueByDay]
-    bookings_by_route: List[BookingByRoute]
-    bookings_by_status: List[BookingByStatus]
+    bookings_by_day: list[BookingByDay]
+    revenue_by_day: list[RevenueByDay]
+    bookings_by_route: list[BookingByRoute]
+    bookings_by_status: list[BookingByStatus]
 
 
 # Forward references

@@ -1,0 +1,3 @@
+[tool.ruff.lint]
+# FastAPI dùng Depends/Query trong chữ ký hàm để khai báo dependency và tham số request.
+ignore = ["B008"]

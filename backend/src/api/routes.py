@@ -1,24 +1,22 @@
 """
 API Routes - FastAPI endpoints
 """
-from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
 
-from src.agent.executor import get_executor, AgentExecutor
+from fastapi import APIRouter, Depends, HTTPException
+
+from src.agent.executor import AgentExecutor, get_executor
 from src.api.schemas import (
-    ChatRequest,
-    ChatResponse,
-    BookingRequest,
-    BookingResponse,
-    PaymentRequest,
-    PaymentResponse,
-    ComplaintRequest,
-    ComplaintResponse,
     ApprovalRequest,
     ApprovalResponse,
+    BookingRequest,
+    BookingResponse,
+    ChatRequest,
+    ChatResponse,
+    ComplaintRequest,
+    ComplaintResponse,
+    PaymentRequest,
+    PaymentResponse,
 )
-
 
 router = APIRouter()
 
@@ -57,8 +55,8 @@ async def chat(
 
 @router.get("/bookings")
 async def list_bookings(
-    user_id: Optional[str] = None,
-    status: Optional[str] = None,
+    user_id: str | None = None,
+    status: str | None = None,
     limit: int = 10,
 ):
     """List bookings with optional filters."""
@@ -101,7 +99,7 @@ async def search_trips(
     origin: str,
     destination: str,
     date: str,
-    time: Optional[str] = None,
+    time: str | None = None,
 ):
     """Search available trips."""
     # TODO: Implement actual trip search
@@ -146,8 +144,8 @@ async def confirm_payment(payment_id: str):
 
 @router.get("/complaints")
 async def list_complaints(
-    user_id: Optional[str] = None,
-    status: Optional[str] = None,
+    user_id: str | None = None,
+    status: str | None = None,
     limit: int = 10,
 ):
     """List complaints with optional filters."""
@@ -214,7 +212,7 @@ async def get_agent_run(run_id: str):
 
 @router.get("/runs")
 async def list_agent_runs(
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
     limit: int = 10,
 ):
     """List recent agent runs."""

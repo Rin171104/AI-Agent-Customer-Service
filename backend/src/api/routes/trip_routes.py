@@ -1,24 +1,24 @@
 """
 API Routes - Trips
 """
-from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User, UserRole, TripStatus
-from src.schemas import TripCreate, TripUpdate, TripResponse
-from src.services.trip_service import TripService
 from src.dependencies import get_current_user, require_role
+from src.models import TripStatus, User, UserRole
+from src.schemas import TripCreate, TripResponse, TripUpdate
+from src.services.trip_service import TripService
 
 router = APIRouter(prefix="/trips", tags=["Trips"])
 
 
 @router.get("", response_model=list[TripResponse])
 async def get_trips(
-    origin: Optional[str] = Query(None, description="Lọc theo điểm đi"),
-    destination: Optional[str] = Query(None, description="Lọc theo điểm đến"),
+    origin: str | None = Query(None, description="Lọc theo điểm đi"),
+    destination: str | None = Query(None, description="Lọc theo điểm đến"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

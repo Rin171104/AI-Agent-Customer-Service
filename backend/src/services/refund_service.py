@@ -3,13 +3,13 @@ Refund Service - xử lý nghiệp vụ hoàn tiền
 """
 import random
 import string
-from typing import List, Optional
 from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models import RefundRequest, RefundStatus, ComplaintStatus, ActorType
+from src.models import ActorType, ComplaintStatus, RefundRequest, RefundStatus
 from src.schemas import RefundCreate
 from src.services.audit_service import AuditService
 from src.services.complaint_service import ComplaintService
@@ -26,7 +26,7 @@ class RefundService:
         return f"{prefix}{random_part}"
 
     @staticmethod
-    async def get_refunds_by_customer(db: AsyncSession, customer_id: UUID) -> List[RefundRequest]:
+    async def get_refunds_by_customer(db: AsyncSession, customer_id: UUID) -> list[RefundRequest]:
         """Lấy danh sách refund của customer"""
         query = select(RefundRequest).order_by(RefundRequest.created_at.desc())
         result = await db.execute(query)
@@ -42,8 +42,8 @@ class RefundService:
     @staticmethod
     async def get_all_refunds(
         db: AsyncSession,
-        status: Optional[RefundStatus] = None
-    ) -> List[RefundRequest]:
+        status: RefundStatus | None = None
+    ) -> list[RefundRequest]:
         """Lấy tất cả refunds (cho owner)"""
         query = select(RefundRequest).options(
             selectinload(RefundRequest.booking),
@@ -58,7 +58,7 @@ class RefundService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_refund_by_id(db: AsyncSession, refund_id: UUID) -> Optional[RefundRequest]:
+    async def get_refund_by_id(db: AsyncSession, refund_id: UUID) -> RefundRequest | None:
         """Lấy refund theo ID"""
         query = select(RefundRequest).options(
             selectinload(RefundRequest.booking),
@@ -99,7 +99,7 @@ class RefundService:
         db: AsyncSession,
         refund_id: UUID,
         owner_id: UUID
-    ) -> Optional[RefundRequest]:
+    ) -> RefundRequest | None:
         """Owner duyệt refund"""
         refund = await RefundService.get_refund_by_id(db, refund_id)
         if not refund:
@@ -137,7 +137,7 @@ class RefundService:
         refund_id: UUID,
         owner_id: UUID,
         note: str
-    ) -> Optional[RefundRequest]:
+    ) -> RefundRequest | None:
         """Owner từ chối refund"""
         refund = await RefundService.get_refund_by_id(db, refund_id)
         if not refund:
@@ -173,7 +173,7 @@ class RefundService:
         db: AsyncSession,
         refund_id: UUID,
         owner_id: UUID
-    ) -> Optional[RefundRequest]:
+    ) -> RefundRequest | None:
         """Đánh dấu đã hoàn tiền"""
         refund = await RefundService.get_refund_by_id(db, refund_id)
         if not refund:

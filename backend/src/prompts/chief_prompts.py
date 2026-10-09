@@ -1,7 +1,6 @@
 """
 Chief Agent Prompts
 """
-from typing import List, Dict
 
 
 CHIEF_SYSTEM_PROMPT = """You are the Chief Agent, an orchestrator for a bus ticket booking customer service system.
@@ -67,6 +66,6 @@ HUMAN_APPROVAL_TRIGGERS = [
 ]
 
 
-def requires_human_approval(action: str, context: Dict) -> bool:
+def requires_human_approval(action: str, context: dict) -> bool:
     """Check if action requires human approval."""
     return action.lower() in HUMAN_APPROVAL_TRIGGERS

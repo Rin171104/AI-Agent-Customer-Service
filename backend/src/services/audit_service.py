@@ -1,13 +1,13 @@
 """
 Audit Service - xử lý log kiểm toán
 """
-from typing import List, Optional
-from uuid import UUID
 from datetime import datetime
-from sqlalchemy import select, func
+from uuid import UUID
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import AuditLog, ActorType
+from src.models import ActorType, AuditLog
 
 
 class AuditService:
@@ -19,10 +19,10 @@ class AuditService:
         actor_type: ActorType,
         action: str,
         entity_type: str,
-        entity_id: Optional[UUID] = None,
-        actor_id: Optional[UUID] = None,
-        description: Optional[str] = None,
-        metadata: Optional[dict] = None
+        entity_id: UUID | None = None,
+        actor_id: UUID | None = None,
+        description: str | None = None,
+        metadata: dict | None = None
     ) -> AuditLog:
         """Tạo audit log mới"""
         log = AuditLog(
@@ -41,12 +41,12 @@ class AuditService:
     @staticmethod
     async def get_logs(
         db: AsyncSession,
-        action: Optional[str] = None,
-        entity_type: Optional[str] = None,
-        from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None,
+        action: str | None = None,
+        entity_type: str | None = None,
+        from_date: datetime | None = None,
+        to_date: datetime | None = None,
         limit: int = 100
-    ) -> List[AuditLog]:
+    ) -> list[AuditLog]:
         """Lấy danh sách audit logs với filter"""
         query = select(AuditLog)
 

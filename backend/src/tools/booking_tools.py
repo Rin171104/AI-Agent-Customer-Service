@@ -1,9 +1,9 @@
 """
 Booking Tools - Deterministic operations for booking domain
 """
-from typing import Dict, Any, List, Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Any
 
 from src.utils.logger import logger
 
@@ -23,8 +23,8 @@ class BookingTools:
         origin: str,
         destination: str,
         date: str,
-        time: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        time: str | None = None
+    ) -> list[dict[str, Any]]:
         """
         Search for available trips.
 
@@ -94,7 +94,7 @@ class BookingTools:
 
         return mock_trips
 
-    async def check_seat(self, trip_id: str) -> List[Dict[str, Any]]:
+    async def check_seat(self, trip_id: str) -> list[dict[str, Any]]:
         """
         Check seat availability for a trip.
 
@@ -127,10 +127,10 @@ class BookingTools:
     async def hold_seat(
         self,
         trip_id: str,
-        seat_numbers: List[str],
+        seat_numbers: list[str],
         customer_id: str,
         hold_minutes: int = 15
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Temporarily hold seats for a customer.
 
@@ -162,12 +162,12 @@ class BookingTools:
     async def create_booking(
         self,
         trip_id: str,
-        seat_numbers: List[str],
+        seat_numbers: list[str],
         customer_name: str,
         phone: str,
         pickup_point: str,
-        customer_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        customer_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Create a booking record.
 
@@ -203,7 +203,7 @@ class BookingTools:
 
         return booking
 
-    async def get_booking(self, booking_id: str) -> Optional[Dict[str, Any]]:
+    async def get_booking(self, booking_id: str) -> dict[str, Any] | None:
         """
         Retrieve booking information.
 
@@ -218,7 +218,7 @@ class BookingTools:
         # TODO: Implement actual database query
         return None
 
-    async def cancel_booking(self, booking_id: str) -> Dict[str, Any]:
+    async def cancel_booking(self, booking_id: str) -> dict[str, Any]:
         """
         Cancel a booking.
 
@@ -242,7 +242,7 @@ class BookingTools:
         self,
         booking_id: str,
         status: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Update booking status.
 

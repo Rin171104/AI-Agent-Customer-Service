@@ -5,11 +5,11 @@ Sử dụng:
     - Chroma (file-based, persistent)
     - Fallback: Simple numpy FAISS-like search
 """
-from typing import List, Dict, Any, Optional
-import numpy as np
-from pathlib import Path
 import json
-import os
+from pathlib import Path
+from typing import Any
+
+import numpy as np
 
 
 class VectorStore:
@@ -20,7 +20,7 @@ class VectorStore:
 
     def __init__(
         self,
-        persist_directory: str = None,
+        persist_directory: str | None = None,
         collection_name: str = "knowledge"
     ):
         self.collection_name = collection_name
@@ -58,7 +58,7 @@ class VectorStore:
             print("Chroma not available, using simple vector store")
             self._use_chroma = False
 
-    def add(self, texts: List[str], embeddings: np.ndarray, metadata: List[Dict[str, Any]]):
+    def add(self, texts: list[str], embeddings: np.ndarray, metadata: list[dict[str, Any]]):
         """Add documents to the store"""
         if self._use_chroma and self._chroma is not None:
             ids = [f"doc_{i}" for i in range(len(texts))]
@@ -78,7 +78,7 @@ class VectorStore:
         query_embedding: np.ndarray,
         k: int = 5,
         threshold: float = 0.0
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search for similar documents.
 
@@ -100,7 +100,7 @@ class VectorStore:
         query_embedding: np.ndarray,
         k: int,
         threshold: float
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search using Chroma"""
         results = self._chroma.query(
             query_embeddings=[query_embedding.tolist()],
@@ -130,7 +130,7 @@ class VectorStore:
         query_embedding: np.ndarray,
         k: int,
         threshold: float
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Simple numpy-based search with cosine similarity"""
         if not self.embeddings:
             return []

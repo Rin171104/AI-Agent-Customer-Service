@@ -1,13 +1,21 @@
 """
 Dashboard Service - thống kê cho owner
 """
-from datetime import datetime, date, timedelta
-from sqlalchemy import select, func, and_
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from datetime import date, datetime, timedelta
 
-from src.models import Trip, Booking, Payment, Complaint, RefundRequest
-from src.models import BookingStatus, PaymentStatus, ComplaintStatus, RefundStatus
+from sqlalchemy import and_, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.models import (
+    Booking,
+    Complaint,
+    ComplaintStatus,
+    Payment,
+    PaymentStatus,
+    RefundRequest,
+    RefundStatus,
+    Trip,
+)
 
 
 class DashboardService:
@@ -18,7 +26,7 @@ class DashboardService:
         """Lấy thống kê cho owner dashboard"""
         today = date.today()
         today_start = datetime.combine(today, datetime.min.time())
-        today_end = datetime.combine(today, datetime.max.time())
+        datetime.combine(today, datetime.max.time())
 
         # Total trips
         total_trips_result = await db.execute(select(func.count(Trip.id)))
@@ -86,7 +94,7 @@ class DashboardService:
         """Lấy dữ liệu chart cho dashboard"""
         today = date.today()
         start_date = today - timedelta(days=days - 1)
-        start_datetime = datetime.combine(start_date, datetime.min.time())
+        datetime.combine(start_date, datetime.min.time())
 
         # Bookings by day
         bookings_by_day = []

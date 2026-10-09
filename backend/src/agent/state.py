@@ -1,11 +1,11 @@
 """
 Agent State - Shared state management for multi-agent workflow
 """
-from typing import Dict, Any, Optional, List
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-import uuid
+from typing import Any
 
 
 class Intent(Enum):
@@ -57,47 +57,47 @@ class AgentState:
 
     # Session info
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: Optional[str] = None
+    user_id: str | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
     # Intent tracking
-    intent: Optional[str] = None
+    intent: str | None = None
     intent_confidence: float = 0.0
 
     # Booking state
-    booking_id: Optional[str] = None
+    booking_id: str | None = None
     booking_status: str = BookingStatus.DRAFT.value
-    trip_id: Optional[str] = None
-    available_trips: List[Dict[str, Any]] = field(default_factory=list)
-    seats: List[str] = field(default_factory=list)
-    available_seats: List[Dict[str, Any]] = field(default_factory=list)
-    hold_id: Optional[str] = None
+    trip_id: str | None = None
+    available_trips: list[dict[str, Any]] = field(default_factory=list)
+    seats: list[str] = field(default_factory=list)
+    available_seats: list[dict[str, Any]] = field(default_factory=list)
+    hold_id: str | None = None
 
     # Payment state
-    payment_id: Optional[str] = None
+    payment_id: str | None = None
     payment_status: str = PaymentStatus.UNPAID.value
 
     # Complaint state
-    complaint_id: Optional[str] = None
-    complaint_severity: Optional[str] = None
+    complaint_id: str | None = None
+    complaint_severity: str | None = None
     complaint_status: str = ComplaintStatus.RECEIVED.value
 
     # Human approval
     requires_human_approval: bool = False
-    human_approval_type: Optional[str] = None
-    approval_status: Optional[str] = None  # pending, approved, rejected
+    human_approval_type: str | None = None
+    approval_status: str | None = None  # pending, approved, rejected
 
     # Context data
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
 
     # Agent trace
-    agent_trace: List[Dict[str, Any]] = field(default_factory=list)
+    agent_trace: list[dict[str, Any]] = field(default_factory=list)
 
     # Messages
-    messages: List[Dict[str, str]] = field(default_factory=list)
+    messages: list[dict[str, str]] = field(default_factory=list)
 
-    def update_context(self, updates: Dict[str, Any]) -> None:
+    def update_context(self, updates: dict[str, Any]) -> None:
         """Update context with new data."""
         self.context.update(updates)
         self.updated_at = datetime.utcnow()
@@ -107,7 +107,7 @@ class AgentState:
         agent: str,
         action: str,
         status: str,
-        details: Optional[Dict[str, Any]] = None
+        details: dict[str, Any] | None = None
     ) -> None:
         """Add an entry to the agent trace."""
         self.agent_trace.append({
@@ -127,7 +127,7 @@ class AgentState:
             "timestamp": datetime.utcnow().isoformat(),
         })
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert state to dictionary."""
         return {
             "session_id": self.session_id,

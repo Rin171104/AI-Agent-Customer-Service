@@ -1,20 +1,18 @@
 """
 API Routes - Refunds
 """
-from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
+
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User, UserRole
-from src.schemas import RefundCreate, RefundResponse, RefundDetailResponse, RefundNote
-from src.services.refund_service import RefundService
-from src.services.booking_service import BookingService
-from src.services.audit_service import AuditService
-from src.services.complaint_service import ComplaintService
 from src.dependencies import get_current_user, require_role
-from src.models import ActorType
+from src.models import User, UserRole
+from src.schemas import RefundCreate, RefundDetailResponse, RefundNote, RefundResponse
+from src.services.booking_service import BookingService
+from src.services.complaint_service import ComplaintService
+from src.services.refund_service import RefundService
 
 router = APIRouter(prefix="/refunds", tags=["Refunds"])
 

@@ -6,10 +6,10 @@ State được duy trì xuyên suốt conversation để:
 - Hỗ trợ handoff giữa agents
 - Theo dõi conversation history
 """
-from typing import Dict, Any, Optional, List
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-import uuid
+from typing import Any
 
 
 @dataclass
@@ -37,36 +37,36 @@ class ConversationState:
     """
     user_id: str
     session_id: str = ""
-    current_agent: Optional[str] = None
-    intent: Optional[str] = None
+    current_agent: str | None = None
+    intent: str | None = None
 
     # Entity IDs
-    trip_id: Optional[str] = None
-    booking_id: Optional[str] = None
-    payment_id: Optional[str] = None
-    complaint_id: Optional[str] = None
-    refund_id: Optional[str] = None
+    trip_id: str | None = None
+    booking_id: str | None = None
+    payment_id: str | None = None
+    complaint_id: str | None = None
+    refund_id: str | None = None
 
     # Conversation history
-    messages: List[Dict[str, Any]] = field(default_factory=list)
-    tool_results: List[Dict[str, Any]] = field(default_factory=list)
+    messages: list[dict[str, Any]] = field(default_factory=list)
+    tool_results: list[dict[str, Any]] = field(default_factory=list)
 
     # Handoff tracking
-    handoff_history: List[Dict[str, Any]] = field(default_factory=list)
+    handoff_history: list[dict[str, Any]] = field(default_factory=list)
 
     # Human-in-the-loop
     requires_human: bool = False
-    human_action: Optional[str] = None
+    human_action: str | None = None
 
     # Final status
-    final_status: Optional[str] = None
+    final_status: str | None = None
 
     def __post_init__(self):
         """Khởi tạo session_id nếu chưa có"""
         if not self.session_id:
             self.session_id = str(uuid.uuid4())
 
-    def add_message(self, role: str, content: str, metadata: Optional[Dict[str, Any]] = None):
+    def add_message(self, role: str, content: str, metadata: dict[str, Any] | None = None):
         """Thêm message vào history"""
         self.messages.append({
             "role": role,
@@ -75,7 +75,7 @@ class ConversationState:
             "metadata": metadata or {}
         })
 
-    def add_tool_result(self, agent: str, tool: str, result: Dict[str, Any]):
+    def add_tool_result(self, agent: str, tool: str, result: dict[str, Any]):
         """Thêm tool result"""
         self.tool_results.append({
             "agent": agent,
@@ -89,7 +89,7 @@ class ConversationState:
         from_agent: str,
         to_agent: str,
         reason: str,
-        context_keys: Optional[List[str]] = None
+        context_keys: list[str] | None = None
     ):
         """Ghi nhận handoff giữa các agents"""
         # Lấy relevant context
@@ -115,14 +115,14 @@ class ConversationState:
         if entity_type in valid_types:
             setattr(self, f"{entity_type}_id", entity_id)
 
-    def get_entity_id(self, entity_type: str) -> Optional[str]:
+    def get_entity_id(self, entity_type: str) -> str | None:
         """Get entity ID"""
         valid_types = ["trip", "booking", "payment", "complaint", "refund"]
         if entity_type in valid_types:
             return getattr(self, f"{entity_type}_id", None)
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert state to dict for serialization"""
         return {
             "user_id": self.user_id,
@@ -143,7 +143,7 @@ class ConversationState:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ConversationState":
+    def from_dict(cls, data: dict[str, Any]) -> "ConversationState":
         """Create state from dict"""
         return cls(
             user_id=data.get("user_id", ""),

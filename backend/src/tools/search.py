@@ -1,8 +1,7 @@
 """
 RAG Search Tool - Semantic search over knowledge base
 """
-from typing import Dict, Any, List, Optional
-import json
+from typing import Any
 
 from src.utils.logger import logger
 
@@ -23,8 +22,8 @@ class SearchTool:
         self,
         query: str,
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
         """
         Search knowledge base for relevant context.
 
@@ -66,7 +65,7 @@ class SearchTool:
         query: str,
         category: str,
         top_k: int = 3
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search within a specific category.
 
@@ -83,7 +82,7 @@ class SearchTool:
         # TODO: Implement category-filtered search
         return []
 
-    async def get_document(self, doc_id: str) -> Optional[Dict[str, Any]]:
+    async def get_document(self, doc_id: str) -> dict[str, Any] | None:
         """
         Get a specific document by ID.
 
@@ -101,8 +100,8 @@ class SearchTool:
     async def index_document(
         self,
         content: str,
-        metadata: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Add a document to the knowledge base.
 
@@ -126,7 +125,7 @@ class SearchTool:
         self,
         session_id: str,
         last_n: int = 5
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
         Retrieve recent conversation history for context.
 

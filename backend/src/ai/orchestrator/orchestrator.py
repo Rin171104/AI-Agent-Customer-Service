@@ -11,8 +11,8 @@ Nhiệm vụ:
 Không phải Agent - chỉ là routing layer.
 """
 import re
-from typing import Dict, Any, Optional
 from enum import Enum
+from typing import Any
 
 from src.ai.orchestrator.state import ConversationState
 from src.utils.logger import logger
@@ -151,8 +151,8 @@ class Orchestrator:
         db: Any,
         user_id: str,
         message: str,
-        state: Optional[ConversationState] = None
-    ) -> Dict[str, Any]:
+        state: ConversationState | None = None
+    ) -> dict[str, Any]:
         """
         Process message và route tới appropriate agent.
 
@@ -190,7 +190,7 @@ class Orchestrator:
         db: Any,
         message: str,
         state: ConversationState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Handle booking domain - route to BookingAgent"""
         # Import here để tránh circular import
         from src.ai.agents.booking_agent import BookingAgent
@@ -272,7 +272,7 @@ class Orchestrator:
         db: Any,
         message: str,
         state: ConversationState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Handle complaint domain - route to ComplaintAgent"""
         from src.ai.agents.complaint_agent import ComplaintAgent
 
@@ -285,7 +285,9 @@ class Orchestrator:
 
         try:
             # Convert state to ComplaintState format
-            from src.ai.agents.complaint_agent import ComplaintState as ComplaintAgentState
+            from src.ai.agents.complaint_agent import (
+                ComplaintState as ComplaintAgentState,
+            )
 
             complaint_state = ComplaintAgentState(
                 user_id=state.user_id,
@@ -362,7 +364,7 @@ class Orchestrator:
         self,
         message: str,
         state: ConversationState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Handle unknown intent"""
         state.current_agent = None
 
@@ -414,9 +416,9 @@ class Orchestrator:
         from_agent: str,
         to_agent: str,
         reason: str,
-        context_keys: Optional[list] = None,
-        state: Optional[ConversationState] = None
-    ) -> Optional[Dict[str, Any]]:
+        context_keys: list | None = None,
+        state: ConversationState | None = None
+    ) -> dict[str, Any] | None:
         """
         Chuyển context giữa các agents.
 

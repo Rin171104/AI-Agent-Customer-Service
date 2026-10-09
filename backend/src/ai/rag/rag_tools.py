@@ -3,10 +3,9 @@ RAG Tools - Wrapper for RAG search to be used by agents
 
 Provides a clean interface for agents to query knowledge base.
 """
-from typing import Dict, Any, List, Optional
-import asyncio
+from typing import Any
 
-from src.ai.rag.retriever import KnowledgeRetriever, get_knowledge_retriever, RetrievalResult
+from src.ai.rag.retriever import KnowledgeRetriever, get_knowledge_retriever
 from src.utils.logger import logger
 
 
@@ -78,7 +77,7 @@ class RAGTools:
     ]
 
     def __init__(self):
-        self.retriever: Optional[KnowledgeRetriever] = None
+        self.retriever: KnowledgeRetriever | None = None
         self._initialized = False
 
     def initialize(self):
@@ -126,7 +125,7 @@ class RAGTools:
         self,
         query: str,
         top_k: int = 5
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Search knowledge base.
 
@@ -164,7 +163,7 @@ class RAGTools:
     def format_response(
         self,
         query: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         include_source: bool = True
     ) -> str:
         """
@@ -197,8 +196,8 @@ class RAGTools:
 
     def get_policy_for_refund(
         self,
-        booking_amount: float = None
-    ) -> Dict[str, Any]:
+        booking_amount: float | None = None
+    ) -> dict[str, Any]:
         """
         Get refund policy information.
 
@@ -211,11 +210,11 @@ class RAGTools:
         result = self.search_knowledge("chính sách hoàn tiền điều kiện hủy vé phí", top_k=3)
         return result
 
-    def get_booking_policy(self) -> Dict[str, Any]:
+    def get_booking_policy(self) -> dict[str, Any]:
         """Get booking policy"""
         return self.search_knowledge("chính sách đặt vé quy trình", top_k=3)
 
-    def get_faq_answer(self, question: str) -> Dict[str, Any]:
+    def get_faq_answer(self, question: str) -> dict[str, Any]:
         """
         Get FAQ answer for a question.
 

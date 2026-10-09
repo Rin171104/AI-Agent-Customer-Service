@@ -4,7 +4,7 @@ Embeddings - Generate embeddings for text chunks
 Sử dụng sentence-transformers (local, không cần API key).
 Fallback: Simple TF-IDF nếu không cài được.
 """
-from typing import List
+
 import numpy as np
 
 
@@ -40,7 +40,7 @@ class EmbeddingsGenerator:
         else:
             return self._tfidf_embed(text)
 
-    def embed_batch(self, texts: List[str]) -> np.ndarray:
+    def embed_batch(self, texts: list[str]) -> np.ndarray:
         """Generate embeddings for multiple texts"""
         if self.model is not None:
             embeddings = self.model.encode(texts)
@@ -76,7 +76,7 @@ class TFIDFVectorizer:
         self.vocabulary = {}
         self.idf = {}
 
-    def fit(self, texts: List[str]):
+    def fit(self, texts: list[str]):
         """Build vocabulary from texts"""
         word_doc_freq = {}
         total_docs = len(texts)
@@ -93,7 +93,7 @@ class TFIDFVectorizer:
             self.vocabulary[word] = i
             self.idf[word] = np.log(total_docs / (word_doc_freq[word] + 1))
 
-    def transform(self, texts: List[str]) -> np.ndarray:
+    def transform(self, texts: list[str]) -> np.ndarray:
         """Transform texts to vectors"""
         vectors = []
         for text in texts:

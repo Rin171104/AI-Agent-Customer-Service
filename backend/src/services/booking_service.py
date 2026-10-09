@@ -3,13 +3,13 @@ Booking Service - xử lý nghiệp vụ đặt vé
 """
 import random
 import string
-from typing import List, Optional
 from uuid import UUID
-from sqlalchemy import select, and_
+
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models import Booking, BookingStatus, Trip
+from src.models import Booking, BookingStatus
 from src.schemas import BookingCreate
 from src.services.trip_service import TripService
 
@@ -25,7 +25,7 @@ class BookingService:
         return f"{prefix}{random_part}"
 
     @staticmethod
-    async def get_bookings_by_user(db: AsyncSession, user_id: UUID) -> List[Booking]:
+    async def get_bookings_by_user(db: AsyncSession, user_id: UUID) -> list[Booking]:
         """Lấy danh sách booking của user"""
         query = select(Booking).where(Booking.user_id == user_id).order_by(Booking.created_at.desc())
         result = await db.execute(query)
@@ -34,10 +34,10 @@ class BookingService:
     @staticmethod
     async def get_all_bookings(
         db: AsyncSession,
-        status: Optional[BookingStatus] = None,
-        from_date: Optional[str] = None,
-        to_date: Optional[str] = None
-    ) -> List[Booking]:
+        status: BookingStatus | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None
+    ) -> list[Booking]:
         """Lấy tất cả bookings (cho owner)"""
         query = select(Booking).options(selectinload(Booking.trip))
 
@@ -53,7 +53,7 @@ class BookingService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_booking_by_id(db: AsyncSession, booking_id: UUID) -> Optional[Booking]:
+    async def get_booking_by_id(db: AsyncSession, booking_id: UUID) -> Booking | None:
         """Lấy booking theo ID"""
         query = select(Booking).options(
             selectinload(Booking.trip),
@@ -63,7 +63,7 @@ class BookingService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_booking_by_code(db: AsyncSession, booking_code: str) -> Optional[Booking]:
+    async def get_booking_by_code(db: AsyncSession, booking_code: str) -> Booking | None:
         """Lấy booking theo mã"""
         query = select(Booking).options(
             selectinload(Booking.trip),
@@ -106,7 +106,7 @@ class BookingService:
         return booking
 
     @staticmethod
-    async def update_booking_status(db: AsyncSession, booking_id: UUID, status: BookingStatus) -> Optional[Booking]:
+    async def update_booking_status(db: AsyncSession, booking_id: UUID, status: BookingStatus) -> Booking | None:
         """Cập nhật trạng thái booking"""
         booking = await BookingService.get_booking_by_id(db, booking_id)
         if not booking:
@@ -124,7 +124,7 @@ class BookingService:
         return booking
 
     @staticmethod
-    async def cancel_booking(db: AsyncSession, booking_id: UUID, user_id: UUID) -> Optional[Booking]:
+    async def cancel_booking(db: AsyncSession, booking_id: UUID, user_id: UUID) -> Booking | None:
         """Hủy booking (chỉ chủ booking hoặc owner)"""
         booking = await BookingService.get_booking_by_id(db, booking_id)
         if not booking:

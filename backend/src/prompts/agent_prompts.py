@@ -1,8 +1,6 @@
 """
 Agent Prompts - Specialized prompts for each agent
 """
-from typing import List, Dict
-
 
 BOOKING_AGENT_PROMPT = """You are the Booking Agent for a bus ticket booking system.
 
@@ -60,7 +58,7 @@ Result: {result}
 Provide a summary of the result in natural language for the customer."""
 
 
-def format_booking_options(trips: List[Dict]) -> str:
+def format_booking_options(trips: list[dict]) -> str:
     """Format trip options for display."""
     if not trips:
         return "No trips available for your search."
@@ -76,7 +74,7 @@ def format_booking_options(trips: List[Dict]) -> str:
     return "\n".join(options)
 
 
-def format_seat_availability(seats: List[Dict]) -> str:
+def format_seat_availability(seats: list[dict]) -> str:
     """Format seat availability for display."""
     available = [s for s in seats if s.get("status") == "available"]
 
@@ -87,7 +85,7 @@ def format_seat_availability(seats: List[Dict]) -> str:
     return f"Available seats: {', '.join(seat_numbers)}"
 
 
-def format_booking_summary(booking: Dict) -> str:
+def format_booking_summary(booking: dict) -> str:
     """Format booking information for display."""
     return f"""
 Booking ID: {booking.get('booking_id')}

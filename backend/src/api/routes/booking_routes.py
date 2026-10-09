@@ -1,17 +1,17 @@
 """
 API Routes - Bookings
 """
-from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User, UserRole, BookingStatus
-from src.schemas import BookingCreate, BookingResponse, BookingDetailResponse
+from src.dependencies import get_current_user, require_role
+from src.models import BookingStatus, User, UserRole
+from src.schemas import BookingCreate, BookingDetailResponse, BookingResponse
 from src.services.booking_service import BookingService
 from src.services.payment_service import PaymentService
-from src.dependencies import get_current_user, require_role
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -28,7 +28,7 @@ async def get_my_bookings(
 
 @router.get("/all", response_model=list[BookingResponse])
 async def get_all_bookings(
-    status: Optional[BookingStatus] = Query(None, description="Lọc theo trạng thái"),
+    status: BookingStatus | None = Query(None, description="Lọc theo trạng thái"),
     db: AsyncSession = Depends(get_db),
     owner: User = Depends(require_role(UserRole.OWNER))
 ):
@@ -65,7 +65,7 @@ async def create_booking(
     try:
         booking = await BookingService.create_booking(db, current_user.id, data)
         # Tạo payment record
-        payment = await PaymentService.create_payment(db, booking.id)
+        await PaymentService.create_payment(db, booking.id)
         await db.commit()
 
         # Reload booking với relationships

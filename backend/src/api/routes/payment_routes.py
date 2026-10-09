@@ -2,15 +2,16 @@
 API Routes - Payments
 """
 from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
+from src.dependencies import get_current_user
 from src.models import User, UserRole
 from src.schemas import PaymentResponse, PaymentSimulate
-from src.services.payment_service import PaymentService
 from src.services.booking_service import BookingService
-from src.dependencies import get_current_user
+from src.services.payment_service import PaymentService
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
