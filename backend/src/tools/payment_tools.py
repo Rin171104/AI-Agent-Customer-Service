@@ -1,9 +1,9 @@
 """
 Payment Tools - Deterministic operations for payment domain
 """
-from typing import Dict, Any, Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import Any
 
 from src.utils.logger import logger
 
@@ -22,9 +22,9 @@ class PaymentTools:
         self,
         booking_id: str,
         amount: int,
-        customer_id: Optional[str] = None,
+        customer_id: str | None = None,
         payment_method: str = "bank_transfer"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Create a payment request.
 
@@ -73,7 +73,7 @@ class PaymentTools:
 
         return payment_info
 
-    async def check_payment_status(self, payment_id: str) -> Dict[str, Any]:
+    async def check_payment_status(self, payment_id: str) -> dict[str, Any]:
         """
         Check payment status.
 
@@ -93,7 +93,7 @@ class PaymentTools:
             "checked_at": datetime.utcnow().isoformat(),
         }
 
-    async def confirm_payment(self, payment_id: str) -> Dict[str, Any]:
+    async def confirm_payment(self, payment_id: str) -> dict[str, Any]:
         """
         Confirm a payment.
 
@@ -113,7 +113,7 @@ class PaymentTools:
             "confirmed_at": datetime.utcnow().isoformat(),
         }
 
-    async def get_payment(self, payment_id: str) -> Optional[Dict[str, Any]]:
+    async def get_payment(self, payment_id: str) -> dict[str, Any] | None:
         """
         Retrieve payment information.
 
@@ -131,9 +131,9 @@ class PaymentTools:
     async def refund_payment(
         self,
         payment_id: str,
-        amount: Optional[int] = None,
-        reason: Optional[str] = None
-    ) -> Dict[str, Any]:
+        amount: int | None = None,
+        reason: str | None = None
+    ) -> dict[str, Any]:
         """
         Process a refund.
 

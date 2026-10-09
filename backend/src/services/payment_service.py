@@ -2,21 +2,20 @@
 Payment Service - xử lý nghiệp vụ thanh toán
 """
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Payment, PaymentStatus, Booking, BookingStatus
+from src.models import ActorType, Booking, BookingStatus, Payment, PaymentStatus
 from src.services.audit_service import AuditService
-from src.models import ActorType
 
 
 class PaymentService:
     """Service xử lý thanh toán"""
 
     @staticmethod
-    async def get_payment_by_booking(db: AsyncSession, booking_id: UUID) -> Optional[Payment]:
+    async def get_payment_by_booking(db: AsyncSession, booking_id: UUID) -> Payment | None:
         """Lấy payment theo booking ID"""
         result = await db.execute(
             select(Payment).where(Payment.booking_id == booking_id)
@@ -24,7 +23,7 @@ class PaymentService:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def get_payment_by_id(db: AsyncSession, payment_id: UUID) -> Optional[Payment]:
+    async def get_payment_by_id(db: AsyncSession, payment_id: UUID) -> Payment | None:
         """Lấy payment theo ID"""
         result = await db.execute(
             select(Payment).where(Payment.id == payment_id)
@@ -64,7 +63,7 @@ class PaymentService:
         payment_id: UUID,
         success: bool = True,
         actor_type: ActorType = ActorType.CUSTOMER,
-        actor_id: Optional[UUID] = None
+        actor_id: UUID | None = None
     ) -> Payment:
         """Xử lý thanh toán - mô phỏng"""
         payment = await PaymentService.get_payment_by_id(db, payment_id)
@@ -108,7 +107,7 @@ class PaymentService:
                 action="PAYMENT_FAILED",
                 entity_type="Payment",
                 entity_id=payment_id,
-                description=f"Thanh toán thất bại cho booking",
+                description="Thanh toán thất bại cho booking",
                 metadata={"amount": payment.amount}
             )
 

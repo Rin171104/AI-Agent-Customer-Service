@@ -5,11 +5,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User
-from src.schemas import DashboardStats, ChartData
-from src.services.dashboard_service import DashboardService
 from src.dependencies import require_role
-from src.models import UserRole
+from src.models import User, UserRole
+from src.schemas import ChartData, DashboardStats
+from src.services.dashboard_service import DashboardService
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 

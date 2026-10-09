@@ -19,15 +19,14 @@ RAG Integration:
     - Realtime queries -> Tools
 """
 import re
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
-from uuid import UUID
+from typing import Any
 
-from src.ai.tools.trip_tools import TripTools
+from src.ai.rag.rag_tools import RAGTools
 from src.ai.tools.booking_tools import BookingTools
 from src.ai.tools.payment_tools import PaymentTools
-from src.ai.rag.rag_tools import RAGTools
+from src.ai.tools.trip_tools import TripTools
 from src.utils.logger import logger
 
 
@@ -36,14 +35,14 @@ class BookingState:
     """State cho Booking Agent"""
     user_id: str
     session_id: str = ""
-    intent: Optional[str] = None
-    trip_id: Optional[str] = None
-    booking_id: Optional[str] = None
-    payment_id: Optional[str] = None
-    messages: List[Dict[str, str]] = field(default_factory=list)
-    tool_results: List[Dict[str, Any]] = field(default_factory=list)
-    final_status: Optional[str] = None
-    context: Dict[str, Any] = field(default_factory=dict)
+    intent: str | None = None
+    trip_id: str | None = None
+    booking_id: str | None = None
+    payment_id: str | None = None
+    messages: list[dict[str, str]] = field(default_factory=list)
+    tool_results: list[dict[str, Any]] = field(default_factory=list)
+    final_status: str | None = None
+    context: dict[str, Any] = field(default_factory=dict)
 
     def add_message(self, role: str, content: str):
         """Thêm message vào history"""
@@ -53,7 +52,7 @@ class BookingState:
             "timestamp": datetime.utcnow().isoformat()
         })
 
-    def add_tool_result(self, tool: str, result: Dict[str, Any]):
+    def add_tool_result(self, tool: str, result: dict[str, Any]):
         """Thêm tool result"""
         self.tool_results.append({
             "tool": tool,
@@ -186,7 +185,7 @@ class BookingAgent:
         # Default intent
         return "unknown"
 
-    def extract_entities(self, message: str) -> Dict[str, Any]:
+    def extract_entities(self, message: str) -> dict[str, Any]:
         """
         Trích xuất entities từ message.
 
@@ -244,12 +243,6 @@ class BookingAgent:
             entities["booking_code"] = booking_match.group(2).upper()
 
         # Date
-        date_patterns = [
-            (r"ngày\s*(\d{1,2})/(\d{1,2})", r"\1/\2"),
-            (r"(\d{4})-(\d{2})-(\d{2})", r"\3/\2/\1"),
-            (r"ngày\s*mai", "Ngày mai"),
-            (r"ngày\s*kia", "Ngày kia"),
-        ]
 
         return entities
 
@@ -258,8 +251,8 @@ class BookingAgent:
         db: Any,
         user_id: str,
         message: str,
-        state: Optional[BookingState] = None
-    ) -> Dict[str, Any]:
+        state: BookingState | None = None
+    ) -> dict[str, Any]:
         """
         Xử lý message từ customer.
 
@@ -340,8 +333,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý tìm kiếm chuyến xe"""
         origin = entities.get("origin")
         destination = entities.get("destination")
@@ -402,8 +395,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý lấy thông tin chuyến xe"""
         trip_id = entities.get("trip_id") or state.trip_id
 
@@ -430,7 +423,7 @@ class BookingAgent:
 
         trip = result.get("trip", {})
 
-        response = f"Thông tin chuyến xe:\n"
+        response = "Thông tin chuyến xe:\n"
         response += f"- Tuyến: {trip['route']}\n"
         response += f"- Lộ trình: {trip['origin']} → {trip['destination']}\n"
         response += f"- Giờ khởi hành: {trip['departure_time']}\n"
@@ -452,8 +445,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý kiểm tra ghế trống"""
         trip_id = entities.get("trip_id") or state.trip_id
         seat_count = entities.get("seat_count") or 1
@@ -514,8 +507,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý tạo booking - multi-step"""
         trip_id = entities.get("trip_id") or state.trip_id
         seat_count = entities.get("seat_count") or 1
@@ -589,13 +582,13 @@ class BookingAgent:
         state.booking_id = booking.get("id")
         state.context["last_booking"] = booking
 
-        response = f"✓ Đặt vé thành công!\n\n"
+        response = "✓ Đặt vé thành công!\n\n"
         response += f"- Mã booking: {booking.get('booking_code')}\n"
         response += f"- Tuyến: {trip_info.get('origin')} → {trip_info.get('destination')}\n"
         response += f"- Giờ khởi hành: {trip_info.get('departure_time')}\n"
         response += f"- Số ghế: {booking.get('seat_count')}\n"
         response += f"- Tổng tiền: {booking.get('total_amount'):,} VND\n"
-        response += f"- Trạng thái: Chờ thanh toán\n\n"
+        response += "- Trạng thái: Chờ thanh toán\n\n"
         response += "Bạn có muốn thanh toán ngay không?"
 
         return {
@@ -613,8 +606,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý xem thông tin booking"""
         booking_id = entities.get("booking_id")
         booking_code = entities.get("booking_code")
@@ -649,7 +642,7 @@ class BookingAgent:
 
         booking = result.get("booking", {})
 
-        response = f"Thông tin booking:\n"
+        response = "Thông tin booking:\n"
         response += f"- Mã: {booking.get('booking_code')}\n"
         response += f"- Số ghế: {booking.get('seat_count')}\n"
         response += f"- Tổng tiền: {booking.get('total_amount'):,} VND\n"
@@ -662,7 +655,7 @@ class BookingAgent:
 
         if booking.get("payment"):
             payment = booking["payment"]
-            response += f"\nThanh toán:\n"
+            response += "\nThanh toán:\n"
             response += f"- Số tiền: {payment.get('amount'):,} VND\n"
             response += f"- Phương thức: {payment.get('method')}\n"
             response += f"- Trạng thái: {self._format_payment_status(payment.get('status'))}"
@@ -680,8 +673,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý hủy booking"""
         booking_id = entities.get("booking_id")
         booking_code = entities.get("booking_code")
@@ -750,9 +743,9 @@ class BookingAgent:
 
         cancelled = result.get("booking", {})
 
-        response = f"✓ Hủy booking thành công!\n"
+        response = "✓ Hủy booking thành công!\n"
         response += f"- Mã booking: {cancelled.get('booking_code')}\n"
-        response += f"- Trạng thái: Đã hủy\n\n"
+        response += "- Trạng thái: Đã hủy\n\n"
         response += "Các ghế đã được giải phóng và có thể đặt cho khách khác."
 
         return {
@@ -766,8 +759,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý tạo payment"""
         booking_id = entities.get("booking_id")
 
@@ -830,15 +823,15 @@ class BookingAgent:
             }
 
         payment = result.get("payment", {})
-        payment_message = result.get("message", "")
+        result.get("message", "")
 
         state.payment_id = payment.get("id")
 
-        response = f"Thông tin thanh toán:\n"
+        response = "Thông tin thanh toán:\n"
         response += f"- Mã booking: {booking.get('booking_code')}\n"
         response += f"- Số tiền: {payment.get('amount'):,} VND\n"
         response += f"- Phương thức: {payment.get('method')}\n"
-        response += f"- Trạng thái: Chờ thanh toán\n\n"
+        response += "- Trạng thái: Chờ thanh toán\n\n"
         response += "Vui lòng thanh toán và thông báo cho tôi khi hoàn tất để tôi xác nhận."
 
         return {
@@ -856,8 +849,8 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý kiểm tra trạng thái payment"""
         booking_id = entities.get("booking_id")
 
@@ -887,7 +880,7 @@ class BookingAgent:
 
         payment = result.get("payment", {})
 
-        response = f"Trạng thái thanh toán:\n"
+        response = "Trạng thái thanh toán:\n"
         response += f"- Số tiền: {payment.get('amount'):,} VND\n"
         response += f"- Phương thức: {payment.get('method')}\n"
         response += f"- Trạng thái: {self._format_payment_status(payment.get('status'))}"
@@ -906,7 +899,7 @@ class BookingAgent:
         self,
         db: Any,
         state: BookingState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Xử lý lấy danh sách booking của user"""
         result = await self.booking_tools.get_user_bookings(
             db=db,
@@ -949,7 +942,7 @@ class BookingAgent:
         self,
         state: BookingState,
         message: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Xử lý knowledge query - dùng RAG.
 
@@ -989,7 +982,7 @@ class BookingAgent:
         db: Any,
         state: BookingState,
         message: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Xử lý khi không nhận diện được intent"""
         # Try to detect if this is a knowledge query
         if self.rag_tools.should_use_rag(message):

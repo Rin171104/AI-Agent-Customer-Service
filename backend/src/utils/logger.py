@@ -3,12 +3,11 @@ Logger - Structured logging configuration
 """
 import logging
 import sys
-from typing import Optional
 
 from src.utils.config import settings
 
 
-def setup_logger(name: Optional[str] = None) -> logging.Logger:
+def setup_logger(name: str | None = None) -> logging.Logger:
     """Setup logger with structured formatting."""
     logger = logging.getLogger(name or __name__)
 

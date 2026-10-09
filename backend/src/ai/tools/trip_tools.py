@@ -3,12 +3,11 @@ Trip Tools - AI Tools cho domain chuyến xe
 
 Kết nối: Agent -> TripTools -> TripService -> Database
 """
-from typing import List, Optional, Dict, Any
+from typing import Any
 from uuid import UUID
 
-from src.services.trip_service import TripService
 from src.models import TripStatus
-from src.schemas import TripResponse
+from src.services.trip_service import TripService
 from src.utils.logger import logger
 
 
@@ -21,10 +20,10 @@ class TripTools:
     async def search_trips(
         self,
         db: Any,
-        origin: Optional[str] = None,
-        destination: Optional[str] = None,
-        status: Optional[TripStatus] = TripStatus.ACTIVE
-    ) -> Dict[str, Any]:
+        origin: str | None = None,
+        destination: str | None = None,
+        status: TripStatus | None = TripStatus.ACTIVE
+    ) -> dict[str, Any]:
         """
         Tìm kiếm chuyến xe theo điểm đi, điểm đến.
 
@@ -78,7 +77,7 @@ class TripTools:
         self,
         db: Any,
         trip_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lấy thông tin chi tiết một chuyến xe.
 
@@ -136,7 +135,7 @@ class TripTools:
         db: Any,
         trip_id: str,
         seat_count: int = 1
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Kiểm tra số ghế còn trống cho một chuyến xe.
 
@@ -199,10 +198,10 @@ class TripTools:
     async def get_available_trips_summary(
         self,
         db: Any,
-        origin: Optional[str] = None,
-        destination: Optional[str] = None,
+        origin: str | None = None,
+        destination: str | None = None,
         min_seats: int = 1
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lấy danh sách chuyến xe còn ghế trống.
 

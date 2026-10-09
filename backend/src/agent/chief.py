@@ -1,12 +1,12 @@
 """
 Chief Agent - Orchestrator for the Multi-Agent System
 """
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 from src.agent.state import AgentState
 from src.models.llm_client import LLMClient
-from src.prompts.chief_prompts import CHIEF_SYSTEM_PROMPT, INTENT_CLASSIFICATION_PROMPT
+from src.prompts.chief_prompts import INTENT_CLASSIFICATION_PROMPT
 
 
 @dataclass
@@ -36,7 +36,7 @@ class ChiefAgent:
         self,
         message: str,
         state: AgentState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Main entry point for processing customer requests.
 
@@ -103,7 +103,7 @@ class ChiefAgent:
         message: str,
         intent: str,
         state: AgentState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Extract relevant entities from the message."""
         entities = {}
 
@@ -113,7 +113,7 @@ class ChiefAgent:
 Extract booking entities from: {message}
 Return JSON with: origin, destination, date, time, quantity, passenger_name, phone
 """
-            response = await self.llm_client.generate(prompt)
+            await self.llm_client.generate(prompt)
             # Parse response and update entities
             # TODO: Implement proper parsing
 
@@ -123,7 +123,7 @@ Return JSON with: origin, destination, date, time, quantity, passenger_name, pho
         self,
         intent: str,
         state: AgentState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Delegate task to appropriate specialist agent."""
         if intent == "booking" and self.booking_agent:
             return await self.booking_agent.process(state)
@@ -135,7 +135,7 @@ Return JSON with: origin, destination, date, time, quantity, passenger_name, pho
         # Fallback for FAQ or general queries
         return await self._handle_faq(state)
 
-    async def _handle_faq(self, state: AgentState) -> Dict[str, Any]:
+    async def _handle_faq(self, state: AgentState) -> dict[str, Any]:
         """Handle FAQ or general queries using RAG."""
         # TODO: Implement RAG-based FAQ handling
         return {
@@ -145,9 +145,9 @@ Return JSON with: origin, destination, date, time, quantity, passenger_name, pho
 
     async def _validate_result(
         self,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         state: AgentState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Validate the result from specialist agent."""
         # TODO: Implement proper validation
         return {
@@ -157,7 +157,7 @@ Return JSON with: origin, destination, date, time, quantity, passenger_name, pho
 
     def _requires_human_approval(
         self,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         state: AgentState
     ) -> bool:
         """Check if human approval is required for this action."""

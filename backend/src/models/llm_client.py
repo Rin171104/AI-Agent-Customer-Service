@@ -1,7 +1,6 @@
 """
 LLM Client - Unified interface for LLM providers
 """
-from typing import Optional, Dict, Any, List
 from abc import ABC, abstractmethod
 
 from src.utils.config import settings
@@ -14,16 +13,14 @@ class LLMProvider(ABC):
     @abstractmethod
     async def generate(self, prompt: str, **kwargs) -> str:
         """Generate response from prompt."""
-        pass
 
     @abstractmethod
     async def generate_with_messages(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         **kwargs
     ) -> str:
         """Generate response from message list."""
-        pass
 
 
 class OpenAIClient(LLMProvider):
@@ -42,7 +39,7 @@ class OpenAIClient(LLMProvider):
 
     async def generate_with_messages(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         **kwargs
     ) -> str:
         """Generate response using message history."""
@@ -67,7 +64,7 @@ class AnthropicClient(LLMProvider):
 
     async def generate_with_messages(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         **kwargs
     ) -> str:
         """Generate response using message history."""
@@ -111,7 +108,7 @@ class LLMClient:
 
     async def generate_with_messages(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         **kwargs
     ) -> str:
         """Generate response from message history."""

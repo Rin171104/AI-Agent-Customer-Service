@@ -3,14 +3,14 @@ Refund Tools - AI Tools cho domain hoàn tiền
 
 Kết nối: Agent -> RefundTools -> RefundService -> Database
 """
-from typing import Dict, Any, Optional
+from typing import Any
 from uuid import UUID
 
-from src.services.refund_service import RefundService
-from src.services.booking_service import BookingService
-from src.models import RefundStatus, ActorType
+from src.models import ActorType, RefundStatus
 from src.schemas import RefundCreate
 from src.services.audit_service import AuditService
+from src.services.booking_service import BookingService
+from src.services.refund_service import RefundService
 from src.utils.logger import logger
 
 
@@ -29,9 +29,9 @@ class RefundTools:
         bank_name: str,
         account_number: str,
         account_holder: str,
-        complaint_id: Optional[str] = None,
-        reason: Optional[str] = None
-    ) -> Dict[str, Any]:
+        complaint_id: str | None = None,
+        reason: str | None = None
+    ) -> dict[str, Any]:
         """
         Tạo yêu cầu hoàn tiền.
 
@@ -149,7 +149,7 @@ class RefundTools:
         self,
         db: Any,
         refund_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lấy thông tin chi tiết refund.
 
@@ -227,7 +227,7 @@ class RefundTools:
         self,
         db: Any,
         customer_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lấy danh sách refund của khách hàng.
 
@@ -278,8 +278,8 @@ class RefundTools:
     async def get_all_refunds(
         self,
         db: Any,
-        status: Optional[str] = None
-    ) -> Dict[str, Any]:
+        status: str | None = None
+    ) -> dict[str, Any]:
         """
         Lấy tất cả refunds (cho owner).
 
@@ -340,7 +340,7 @@ class RefundTools:
         db: Any,
         refund_id: str,
         owner_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Owner phê duyệt refund.
 
@@ -408,7 +408,7 @@ class RefundTools:
         refund_id: str,
         owner_id: str,
         note: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Owner từ chối refund.
 
@@ -480,7 +480,7 @@ class RefundTools:
         db: Any,
         refund_id: str,
         owner_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Owner đánh dấu đã hoàn tiền.
 
@@ -544,7 +544,7 @@ class RefundTools:
     async def get_pending_refunds_count(
         self,
         db: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Đếm số refund đang chờ duyệt.
 

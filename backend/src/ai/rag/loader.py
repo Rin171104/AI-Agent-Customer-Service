@@ -5,10 +5,9 @@ Hỗ trợ:
     - Markdown files (.md)
     - Plain text (.txt)
 """
-import os
-from pathlib import Path
-from typing import List, Dict, Any
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -17,20 +16,20 @@ class Document:
     content: str
     source: str  # filename
     title: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class DocumentLoader:
     """Load documents từ filesystem"""
 
-    def __init__(self, knowledge_dir: str = None):
+    def __init__(self, knowledge_dir: str | None = None):
         if knowledge_dir is None:
             # Default: backend/data/knowledge/
             base_dir = Path(__file__).parent.parent.parent.parent
             knowledge_dir = base_dir / "data" / "knowledge"
         self.knowledge_dir = Path(knowledge_dir)
 
-    def load(self, file_patterns: List[str] = None) -> List[Document]:
+    def load(self, file_patterns: list[str] | None = None) -> list[Document]:
         """
         Load all documents from knowledge directory.
 
@@ -93,7 +92,7 @@ class DocumentLoader:
         return default
 
 
-def load_knowledge_documents(knowledge_dir: str = None) -> List[Document]:
+def load_knowledge_documents(knowledge_dir: str | None = None) -> list[Document]:
     """Convenience function to load all knowledge documents"""
     loader = DocumentLoader(knowledge_dir)
     return loader.load()

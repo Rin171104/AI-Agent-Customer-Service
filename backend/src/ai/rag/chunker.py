@@ -6,9 +6,9 @@ Chiến lược:
     - Preserve semantic context
     - Keep metadata for citation
 """
-from typing import List, Dict, Any
-from dataclasses import dataclass
 import uuid
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -20,7 +20,7 @@ class Chunk:
     document: str  # document title
     section: str  # section/heading
     position: int  # position in document
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 class MarkdownChunker:
@@ -39,7 +39,7 @@ class MarkdownChunker:
         self.max_chunk_size = max_chunk_size
         self.overlap = overlap
 
-    def chunk(self, content: str, source: str, document_title: str) -> List[Chunk]:
+    def chunk(self, content: str, source: str, document_title: str) -> list[Chunk]:
         """
         Split content into chunks by headings.
 
@@ -143,7 +143,7 @@ class MarkdownChunker:
         )
 
 
-def chunk_documents(documents: List, chunker: MarkdownChunker = None) -> List[Chunk]:
+def chunk_documents(documents: list, chunker: MarkdownChunker = None) -> list[Chunk]:
     """
     Chunk a list of documents.
 

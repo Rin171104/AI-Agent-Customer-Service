@@ -1,12 +1,11 @@
 """
 Booking Agent - Handles ticket booking operations
 """
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+from typing import Any
 
 from src.agent.state import AgentState
 from src.models.llm_client import LLMClient
-from src.prompts.agent_prompts import BOOKING_AGENT_PROMPT
 from src.tools.booking_tools import BookingTools
 
 
@@ -30,7 +29,7 @@ class BookingAgent:
     def __post_init__(self):
         self.name = "Booking Agent"
 
-    async def process(self, state: AgentState) -> Dict[str, Any]:
+    async def process(self, state: AgentState) -> dict[str, Any]:
         """
         Process booking request based on current state.
 
@@ -57,7 +56,7 @@ class BookingAgent:
 
         return {"action": "unknown", "message": "Unknown booking action"}
 
-    async def _search_trips(self, state: AgentState) -> Dict[str, Any]:
+    async def _search_trips(self, state: AgentState) -> dict[str, Any]:
         """Search available trips based on route and date."""
         origin = state.context.get("origin")
         destination = state.context.get("destination")
@@ -97,7 +96,7 @@ class BookingAgent:
             "message": f"Found {len(trips)} trips. {trip_options}",
         }
 
-    async def _check_seats(self, state: AgentState) -> Dict[str, Any]:
+    async def _check_seats(self, state: AgentState) -> dict[str, Any]:
         """Check seat availability for a specific trip."""
         trip_id = state.trip_id or state.context.get("trip_id")
 
@@ -120,7 +119,7 @@ class BookingAgent:
             "message": f"Available seats: {', '.join([s['seat_number'] for s in available_seats])}",
         }
 
-    async def _hold_seats(self, state: AgentState) -> Dict[str, Any]:
+    async def _hold_seats(self, state: AgentState) -> dict[str, Any]:
         """Hold selected seats temporarily."""
         trip_id = state.trip_id
         seat_numbers = state.context.get("seats", [])
@@ -153,7 +152,7 @@ class BookingAgent:
             "message": result.get("message", "Failed to hold seats."),
         }
 
-    async def _create_booking(self, state: AgentState) -> Dict[str, Any]:
+    async def _create_booking(self, state: AgentState) -> dict[str, Any]:
         """Create booking draft."""
         required_fields = ["customer_name", "phone", "pickup_point"]
 
@@ -187,7 +186,7 @@ class BookingAgent:
             "message": f"Booking created: {booking.get('booking_id')}. Total: {booking.get('total_amount')} VND",
         }
 
-    async def _get_booking(self, state: AgentState) -> Dict[str, Any]:
+    async def _get_booking(self, state: AgentState) -> dict[str, Any]:
         """Retrieve booking information."""
         booking_id = state.booking_id or state.context.get("booking_id")
 
@@ -206,7 +205,7 @@ class BookingAgent:
             "booking": booking,
         }
 
-    async def _cancel_booking(self, state: AgentState) -> Dict[str, Any]:
+    async def _cancel_booking(self, state: AgentState) -> dict[str, Any]:
         """Cancel a booking."""
         booking_id = state.booking_id or state.context.get("booking_id")
 
@@ -225,7 +224,7 @@ class BookingAgent:
             "message": result.get("message", ""),
         }
 
-    def _format_trip_options(self, trips: List[Dict]) -> str:
+    def _format_trip_options(self, trips: list[dict]) -> str:
         """Format trip options for display."""
         options = []
         for i, trip in enumerate(trips[:5], 1):

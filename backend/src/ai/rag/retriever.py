@@ -9,16 +9,14 @@ Security:
     - Không execute transactions
     - Prompt injection protection via sanitization
 """
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
-import numpy as np
+from typing import Any
 
-from src.ai.rag.loader import load_knowledge_documents
-from src.ai.rag.chunker import chunk_documents, MarkdownChunker
+from src.ai.rag.chunker import MarkdownChunker, chunk_documents
 from src.ai.rag.embeddings import get_embeddings_generator
+from src.ai.rag.loader import load_knowledge_documents
 from src.ai.rag.vector_store import get_vector_store
 from src.utils.logger import logger
-
 
 # Configuration
 RAG_TOP_K = 5  # Number of results to return
@@ -35,7 +33,7 @@ class RetrievalResult:
     score: float
     chunk_id: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "content": self.content,
             "source": self.source,
@@ -125,9 +123,9 @@ class KnowledgeRetriever:
     def search(
         self,
         query: str,
-        top_k: int = None,
-        score_threshold: float = None
-    ) -> List[RetrievalResult]:
+        top_k: int | None = None,
+        score_threshold: float | None = None
+    ) -> list[RetrievalResult]:
         """
         Search knowledge base.
 
@@ -183,8 +181,8 @@ class KnowledgeRetriever:
     def search_with_context(
         self,
         query: str,
-        top_k: int = None
-    ) -> Dict[str, Any]:
+        top_k: int | None = None
+    ) -> dict[str, Any]:
         """
         Search and format results for agent consumption.
 
@@ -274,7 +272,7 @@ def get_knowledge_retriever() -> KnowledgeRetriever:
 async def search_knowledge(
     query: str,
     top_k: int = RAG_TOP_K
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Convenience function for agents to search knowledge.
 

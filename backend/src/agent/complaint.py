@@ -1,9 +1,9 @@
 """
 Complaint Agent - Handles customer complaints
 """
-from typing import Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from src.agent.state import AgentState
 from src.models.llm_client import LLMClient
@@ -35,7 +35,7 @@ class ComplaintAgent:
     def __post_init__(self):
         self.name = "Complaint Agent"
 
-    async def process(self, state: AgentState) -> Dict[str, Any]:
+    async def process(self, state: AgentState) -> dict[str, Any]:
         """
         Process complaint request based on current state.
 
@@ -56,7 +56,7 @@ class ComplaintAgent:
 
         return {"action": "unknown", "message": "Unknown complaint action"}
 
-    async def _receive_complaint(self, state: AgentState) -> Dict[str, Any]:
+    async def _receive_complaint(self, state: AgentState) -> dict[str, Any]:
         """Receive and process a new complaint."""
         complaint_text = state.context.get("complaint_text", "")
         booking_id = state.context.get("booking_id")
@@ -119,7 +119,7 @@ class ComplaintAgent:
             "message": resolution.get("message"),
         }
 
-    async def _classify_complaint(self, complaint_text: str) -> Dict[str, Any]:
+    async def _classify_complaint(self, complaint_text: str) -> dict[str, Any]:
         """Classify complaint type and severity."""
         prompt = f"""
 Classify this complaint:
@@ -130,7 +130,7 @@ Return JSON with:
 - severity: one of [low, medium, high]
 - keywords: list of relevant keywords
 """
-        response = await self.llm_client.generate(prompt)
+        await self.llm_client.generate(prompt)
 
         # TODO: Parse response properly
         # For now, return basic classification
@@ -145,9 +145,9 @@ Return JSON with:
 
     async def _generate_resolution(
         self,
-        complaint: Dict[str, Any],
-        classification: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        complaint: dict[str, Any],
+        classification: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate resolution for low-severity complaints."""
         complaint_type = classification.get("type")
 
@@ -177,7 +177,7 @@ Return JSON with:
 
         return resolution
 
-    async def _get_complaint(self, state: AgentState) -> Dict[str, Any]:
+    async def _get_complaint(self, state: AgentState) -> dict[str, Any]:
         """Retrieve complaint information."""
         complaint_id = state.complaint_id or state.context.get("complaint_id")
 
@@ -196,7 +196,7 @@ Return JSON with:
             "complaint": complaint,
         }
 
-    async def _update_complaint(self, state: AgentState) -> Dict[str, Any]:
+    async def _update_complaint(self, state: AgentState) -> dict[str, Any]:
         """Update complaint status or resolution."""
         complaint_id = state.complaint_id
         update_data = state.context.get("update_data", {})
@@ -208,7 +208,7 @@ Return JSON with:
                 "message": "Please provide a complaint ID.",
             }
 
-        result = await self.complaint_tools.update_complaint(
+        await self.complaint_tools.update_complaint(
             complaint_id=complaint_id,
             **update_data,
         )

@@ -3,14 +3,14 @@ Complaint Tools - AI Tools cho domain khiếu nại
 
 Kết nối: Agent -> ComplaintTools -> ComplaintService -> Database
 """
-from typing import Dict, Any, List, Optional
+from typing import Any
 from uuid import UUID
 
-from src.services.complaint_service import ComplaintService
-from src.services.booking_service import BookingService
-from src.models import ComplaintStatus, ComplaintType, ComplaintPriority, ActorType
-from src.schemas import ComplaintCreate, ComplaintUpdate
+from src.models import ActorType, ComplaintPriority, ComplaintStatus, ComplaintType
+from src.schemas import ComplaintCreate
 from src.services.audit_service import AuditService
+from src.services.booking_service import BookingService
+from src.services.complaint_service import ComplaintService
 from src.utils.logger import logger
 
 
@@ -26,9 +26,9 @@ class ComplaintTools:
         customer_id: str,
         complaint_type: str,
         description: str,
-        booking_id: Optional[str] = None,
+        booking_id: str | None = None,
         priority: str = "MEDIUM"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Tạo khiếu nại mới.
 
@@ -140,7 +140,7 @@ class ComplaintTools:
         self,
         db: Any,
         complaint_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lấy thông tin chi tiết khiếu nại.
 
@@ -207,7 +207,7 @@ class ComplaintTools:
         self,
         db: Any,
         customer_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lấy danh sách khiếu nại của khách hàng.
 
@@ -258,9 +258,9 @@ class ComplaintTools:
     async def get_all_complaints(
         self,
         db: Any,
-        status: Optional[str] = None,
-        priority: Optional[str] = None
-    ) -> Dict[str, Any]:
+        status: str | None = None,
+        priority: str | None = None
+    ) -> dict[str, Any]:
         """
         Lấy tất cả khiếu nại (cho owner).
 
@@ -335,7 +335,7 @@ class ComplaintTools:
         complaint_id: str,
         owner_id: str,
         owner_note: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Giải quyết khiếu nại (chỉ owner).
 
@@ -412,7 +412,7 @@ class ComplaintTools:
     async def get_open_complaints_count(
         self,
         db: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Đếm số khiếu nại đang mở.
 

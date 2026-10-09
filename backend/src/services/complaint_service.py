@@ -3,13 +3,13 @@ Complaint Service - xử lý nghiệp vụ khiếu nại
 """
 import random
 import string
-from typing import List, Optional
 from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models import Complaint, ComplaintStatus, ComplaintType, ComplaintPriority
+from src.models import Complaint, ComplaintPriority, ComplaintStatus
 from src.schemas import ComplaintCreate, ComplaintUpdate
 
 
@@ -24,7 +24,7 @@ class ComplaintService:
         return f"{prefix}{random_part}"
 
     @staticmethod
-    async def get_complaints_by_customer(db: AsyncSession, customer_id: UUID) -> List[Complaint]:
+    async def get_complaints_by_customer(db: AsyncSession, customer_id: UUID) -> list[Complaint]:
         """Lấy danh sách khiếu nại của customer"""
         query = select(Complaint).where(Complaint.customer_id == customer_id).order_by(Complaint.created_at.desc())
         result = await db.execute(query)
@@ -33,9 +33,9 @@ class ComplaintService:
     @staticmethod
     async def get_all_complaints(
         db: AsyncSession,
-        status: Optional[ComplaintStatus] = None,
-        priority: Optional[ComplaintPriority] = None
-    ) -> List[Complaint]:
+        status: ComplaintStatus | None = None,
+        priority: ComplaintPriority | None = None
+    ) -> list[Complaint]:
         """Lấy tất cả khiếu nại (cho owner)"""
         query = select(Complaint).options(
             selectinload(Complaint.booking)
@@ -55,7 +55,7 @@ class ComplaintService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def get_complaint_by_id(db: AsyncSession, complaint_id: UUID) -> Optional[Complaint]:
+    async def get_complaint_by_id(db: AsyncSession, complaint_id: UUID) -> Complaint | None:
         """Lấy khiếu nại theo ID"""
         query = select(Complaint).options(
             selectinload(Complaint.booking),
@@ -88,7 +88,7 @@ class ComplaintService:
         db: AsyncSession,
         complaint_id: UUID,
         data: ComplaintUpdate
-    ) -> Optional[Complaint]:
+    ) -> Complaint | None:
         """Cập nhật khiếu nại"""
         complaint = await ComplaintService.get_complaint_by_id(db, complaint_id)
         if not complaint:
@@ -103,7 +103,7 @@ class ComplaintService:
         return complaint
 
     @staticmethod
-    async def resolve_complaint(db: AsyncSession, complaint_id: UUID, owner_note: str) -> Optional[Complaint]:
+    async def resolve_complaint(db: AsyncSession, complaint_id: UUID, owner_note: str) -> Complaint | None:
         """Giải quyết khiếu nại"""
         complaint = await ComplaintService.get_complaint_by_id(db, complaint_id)
         if not complaint:

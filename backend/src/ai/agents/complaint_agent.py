@@ -19,15 +19,15 @@ RAG Integration:
     - Realtime queries -> Tools
 """
 import re
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
-from src.ai.tools.complaint_tools import ComplaintTools
-from src.ai.tools.refund_tools import RefundTools
-from src.ai.tools.booking_tools import BookingTools
-from src.ai.tools.payment_tools import PaymentTools
 from src.ai.rag.rag_tools import RAGTools
+from src.ai.tools.booking_tools import BookingTools
+from src.ai.tools.complaint_tools import ComplaintTools
+from src.ai.tools.payment_tools import PaymentTools
+from src.ai.tools.refund_tools import RefundTools
 from src.utils.logger import logger
 
 
@@ -36,14 +36,14 @@ class ComplaintState:
     """State cho Complaint Agent"""
     user_id: str
     session_id: str = ""
-    intent: Optional[str] = None
-    booking_id: Optional[str] = None
-    complaint_id: Optional[str] = None
-    refund_id: Optional[str] = None
-    messages: List[Dict[str, str]] = field(default_factory=list)
-    tool_results: List[Dict[str, Any]] = field(default_factory=list)
-    final_status: Optional[str] = None
-    context: Dict[str, Any] = field(default_factory=dict)
+    intent: str | None = None
+    booking_id: str | None = None
+    complaint_id: str | None = None
+    refund_id: str | None = None
+    messages: list[dict[str, str]] = field(default_factory=list)
+    tool_results: list[dict[str, Any]] = field(default_factory=list)
+    final_status: str | None = None
+    context: dict[str, Any] = field(default_factory=dict)
 
     def add_message(self, role: str, content: str):
         """Thêm message vào history"""
@@ -53,7 +53,7 @@ class ComplaintState:
             "timestamp": datetime.utcnow().isoformat()
         })
 
-    def add_tool_result(self, tool: str, result: Dict[str, Any]):
+    def add_tool_result(self, tool: str, result: dict[str, Any]):
         """Thêm tool result"""
         self.tool_results.append({
             "tool": tool,
@@ -154,7 +154,7 @@ class ComplaintAgent:
 
         return "unknown"
 
-    def extract_complaint_type(self, message: str) -> Optional[str]:
+    def extract_complaint_type(self, message: str) -> str | None:
         """Trích xuất complaint type từ message"""
         message_lower = message.lower()
 
@@ -165,7 +165,7 @@ class ComplaintAgent:
 
         return "OTHER"
 
-    def extract_entities(self, message: str) -> Dict[str, Any]:
+    def extract_entities(self, message: str) -> dict[str, Any]:
         """Trích xuất entities từ message"""
         entities = {
             "booking_id": None,
@@ -214,8 +214,8 @@ class ComplaintAgent:
         db: Any,
         user_id: str,
         message: str,
-        state: Optional[ComplaintState] = None
-    ) -> Dict[str, Any]:
+        state: ComplaintState | None = None
+    ) -> dict[str, Any]:
         """
         Xử lý message từ customer.
 
@@ -286,9 +286,9 @@ class ComplaintAgent:
         self,
         db: Any,
         state: ComplaintState,
-        entities: Dict[str, Any],
+        entities: dict[str, Any],
         message: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Xử lý tạo khiếu nại"""
         booking_id = entities.get("booking_id") or state.booking_id
         booking_code = entities.get("booking_code") or state.context.get("booking_code")
@@ -340,10 +340,10 @@ class ComplaintAgent:
         complaint = result.get("complaint", {})
         state.complaint_id = complaint.get("id")
 
-        response = f"✓ Đã tiếp nhận khiếu nại của bạn!\n\n"
+        response = "✓ Đã tiếp nhận khiếu nại của bạn!\n\n"
         response += f"- Mã khiếu nại: {complaint.get('complaint_code')}\n"
         response += f"- Loại: {self._format_complaint_type(complaint.get('type'))}\n"
-        response += f"- Trạng thái: Đang xử lý\n"
+        response += "- Trạng thái: Đang xử lý\n"
         response += f"- Mức ưu tiên: {complaint.get('priority')}\n\n"
         response += "Nhà xe sẽ xem xét và phản hồi sớm nhất có thể."
 
@@ -358,8 +358,8 @@ class ComplaintAgent:
         self,
         db: Any,
         state: ComplaintState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý xem chi tiết khiếu nại"""
         complaint_id = entities.get("complaint_id") or state.complaint_id
 
@@ -396,7 +396,7 @@ class ComplaintAgent:
         state.complaint_id = complaint.get("id")
         state.context["last_complaint"] = complaint
 
-        response = f"Thông tin khiếu nại:\n"
+        response = "Thông tin khiếu nại:\n"
         response += f"- Mã: {complaint.get('complaint_code')}\n"
         response += f"- Loại: {self._format_complaint_type(complaint.get('type'))}\n"
         response += f"- Mô tả: {complaint.get('description')}\n"
@@ -408,7 +408,7 @@ class ComplaintAgent:
 
         if complaint.get("booking"):
             booking = complaint["booking"]
-            response += f"\nBooking liên quan:\n"
+            response += "\nBooking liên quan:\n"
             response += f"- Mã: {booking.get('booking_code')}\n"
 
         return {
@@ -422,7 +422,7 @@ class ComplaintAgent:
         self,
         db: Any,
         state: ComplaintState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Xử lý xem danh sách khiếu nại của mình"""
         result = await self.complaint_tools.get_customer_complaints(
             db=db,
@@ -465,9 +465,9 @@ class ComplaintAgent:
         self,
         db: Any,
         state: ComplaintState,
-        entities: Dict[str, Any],
+        entities: dict[str, Any],
         message: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Xử lý yêu cầu hoàn tiền.
 
@@ -568,10 +568,10 @@ class ComplaintAgent:
 
             response = f"Để yêu cầu hoàn tiền cho booking {booking.get('booking_code')}, vui lòng cung cấp:\n"
             response += f"- Số tiền muốn hoàn (mặc định: {amount:,} VND)\n"
-            response += f"- Tên ngân hàng\n"
-            response += f"- Số tài khoản\n"
+            response += "- Tên ngân hàng\n"
+            response += "- Số tài khoản\n"
             response += f"- Tên chủ tài khoản (phải trùng với tên đặt vé){policy_info}\n"
-            response += f"\nVí dụ: 'Hoàn tiền BK123456, 200000 VND, Vietcombank, 1234567890, Nguyễn Văn A'"
+            response += "\nVí dụ: 'Hoàn tiền BK123456, 200000 VND, Vietcombank, 1234567890, Nguyễn Văn A'"
 
             return {
                 "success": True,
@@ -611,13 +611,13 @@ class ComplaintAgent:
         state.refund_id = refund.get("id")
         state.context["last_refund"] = refund
 
-        response = f"✓ Đã tạo yêu cầu hoàn tiền!\n\n"
+        response = "✓ Đã tạo yêu cầu hoàn tiền!\n\n"
         response += f"- Mã hoàn tiền: {refund.get('refund_code')}\n"
         response += f"- Booking: {booking.get('booking_code')}\n"
         response += f"- Số tiền: {refund.get('amount'):,} VND\n"
         response += f"- Ngân hàng: {refund.get('bank_name')}\n"
         response += f"- STK: {refund.get('account_number')}\n"
-        response += f"- Trạng thái: Chờ phê duyệt\n\n"
+        response += "- Trạng thái: Chờ phê duyệt\n\n"
         response += "Yêu cầu của bạn đang chờ nhà xe (Owner) xem xét và phê duyệt.\n"
         response += "Chỉ có Owner mới có quyền phê duyệt và thực hiện hoàn tiền.\n"
         response += "Bạn sẽ được thông báo khi có kết quả."
@@ -640,14 +640,13 @@ class ComplaintAgent:
         self,
         db: Any,
         state: ComplaintState,
-        entities: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entities: dict[str, Any]
+    ) -> dict[str, Any]:
         """Xử lý xem chi tiết refund"""
         refund_id = entities.get("refund_id") or state.refund_id
 
-        if not refund_id:
-            if state.context.get("last_refund"):
-                refund_id = state.context["last_refund"].get("id")
+        if not refund_id and state.context.get("last_refund"):
+            refund_id = state.context["last_refund"].get("id")
 
         if not refund_id:
             return {
@@ -669,7 +668,7 @@ class ComplaintAgent:
         state.refund_id = refund.get("id")
         state.context["last_refund"] = refund
 
-        response = f"Thông tin hoàn tiền:\n"
+        response = "Thông tin hoàn tiền:\n"
         response += f"- Mã: {refund.get('refund_code')}\n"
         response += f"- Số tiền: {refund.get('amount'):,} VND\n"
         response += f"- Ngân hàng: {refund.get('bank_name')}\n"
@@ -693,7 +692,7 @@ class ComplaintAgent:
         self,
         db: Any,
         state: ComplaintState
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Xử lý xem danh sách refund của mình"""
         result = await self.refund_tools.get_customer_refunds(
             db=db,
@@ -736,7 +735,7 @@ class ComplaintAgent:
         self,
         state: ComplaintState,
         message: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Xử lý knowledge query - dùng RAG.
 
@@ -775,7 +774,7 @@ class ComplaintAgent:
         self,
         state: ComplaintState,
         message: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Xử lý intent không xác định"""
         # Try to detect if this is a knowledge query
         if self.rag_tools.should_use_rag(message):

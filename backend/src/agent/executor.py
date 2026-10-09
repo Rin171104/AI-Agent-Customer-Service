@@ -1,18 +1,17 @@
 """
 Agent Executor - Runs the multi-agent workflow
 """
-from typing import Dict, Any, Optional
-import asyncio
+from typing import Any
 
-from src.agent.state import AgentState
-from src.agent.chief import ChiefAgent
 from src.agent.booking import BookingAgent
+from src.agent.chief import ChiefAgent
 from src.agent.complaint import ComplaintAgent
 from src.agent.payment import PaymentAgent
+from src.agent.state import AgentState
 from src.models.llm_client import LLMClient
 from src.tools.booking_tools import BookingTools
-from src.tools.payment_tools import PaymentTools
 from src.tools.complaint_tools import ComplaintTools
+from src.tools.payment_tools import PaymentTools
 from src.tools.search import SearchTool
 from src.utils.logger import logger
 
@@ -63,7 +62,7 @@ class AgentExecutor:
 
         logger.info("AgentExecutor initialized")
 
-    async def execute(self, message: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+    async def execute(self, message: str, user_id: str | None = None) -> dict[str, Any]:
         """
         Execute the agent workflow for a user message.
 
@@ -128,8 +127,8 @@ class AgentExecutor:
         self,
         message: str,
         conversation_history: list,
-        user_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        user_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Execute with conversation history.
 
@@ -167,7 +166,7 @@ class AgentExecutor:
                 "state": state.to_dict(),
             }
 
-    async def get_agent_run(self, run_id: str) -> Optional[Dict[str, Any]]:
+    async def get_agent_run(self, run_id: str) -> dict[str, Any] | None:
         """
         Retrieve an agent run by ID.
 
@@ -182,7 +181,7 @@ class AgentExecutor:
 
     async def list_agent_runs(
         self,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         limit: int = 10
     ) -> list:
         """
@@ -200,7 +199,7 @@ class AgentExecutor:
 
 
 # Singleton instance
-_executor: Optional[AgentExecutor] = None
+_executor: AgentExecutor | None = None
 
 
 def get_executor() -> AgentExecutor:

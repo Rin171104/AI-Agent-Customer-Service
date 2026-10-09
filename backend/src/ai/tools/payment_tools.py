@@ -3,13 +3,13 @@ Payment Tools - AI Tools cho domain thanh toán
 
 Kết nối: Agent -> PaymentTools -> PaymentService -> Database
 """
-from typing import Dict, Any, Optional
+from typing import Any
 from uuid import UUID
 
-from src.services.payment_service import PaymentService
-from src.services.booking_service import BookingService
 from src.models import ActorType, PaymentStatus
 from src.services.audit_service import AuditService
+from src.services.booking_service import BookingService
+from src.services.payment_service import PaymentService
 from src.utils.logger import logger
 
 
@@ -23,9 +23,9 @@ class PaymentTools:
         self,
         db: Any,
         booking_id: str,
-        actor_id: Optional[str] = None,
+        actor_id: str | None = None,
         actor_type: str = "CUSTOMER"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Tạo payment record cho booking.
 
@@ -128,9 +128,9 @@ class PaymentTools:
         db: Any,
         payment_id: str,
         success: bool = True,
-        actor_id: Optional[str] = None,
+        actor_id: str | None = None,
         actor_type: str = "CUSTOMER"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Xử lý thanh toán (mô phỏng - xác nhận thanh toán thành công/thất bại).
 
@@ -208,9 +208,9 @@ class PaymentTools:
     async def get_payment(
         self,
         db: Any,
-        payment_id: Optional[str] = None,
-        booking_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+        payment_id: str | None = None,
+        booking_id: str | None = None
+    ) -> dict[str, Any]:
         """
         Lấy thông tin payment.
 
@@ -278,7 +278,7 @@ class PaymentTools:
     async def get_pending_payments_count(
         self,
         db: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Đếm số payment đang chờ xử lý.
 

@@ -1,17 +1,22 @@
 """
 API Routes - Complaints
 """
-from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User, UserRole, ComplaintStatus, ComplaintPriority
-from src.schemas import ComplaintCreate, ComplaintUpdate, ComplaintResponse, ComplaintDetailResponse
-from src.services.complaint_service import ComplaintService
-from src.services.booking_service import BookingService
 from src.dependencies import get_current_user, require_role
+from src.models import ComplaintPriority, ComplaintStatus, User, UserRole
+from src.schemas import (
+    ComplaintCreate,
+    ComplaintDetailResponse,
+    ComplaintResponse,
+    ComplaintUpdate,
+)
+from src.services.booking_service import BookingService
+from src.services.complaint_service import ComplaintService
 
 router = APIRouter(prefix="/complaints", tags=["Complaints"])
 
@@ -28,8 +33,8 @@ async def get_my_complaints(
 
 @router.get("/all", response_model=list[ComplaintDetailResponse])
 async def get_all_complaints(
-    status: Optional[ComplaintStatus] = Query(None, description="Lọc theo trạng thái"),
-    priority: Optional[ComplaintPriority] = Query(None, description="Lọc theo mức ưu tiên"),
+    status: ComplaintStatus | None = Query(None, description="Lọc theo trạng thái"),
+    priority: ComplaintPriority | None = Query(None, description="Lọc theo mức ưu tiên"),
     db: AsyncSession = Depends(get_db),
     owner: User = Depends(require_role(UserRole.OWNER))
 ):

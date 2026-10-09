@@ -1,9 +1,9 @@
 """
 Payment Agent - Handles payment processing
 """
-from typing import Dict, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from src.agent.state import AgentState
 from src.models.llm_client import LLMClient
@@ -39,7 +39,7 @@ class PaymentAgent:
     def __post_init__(self):
         self.name = "Payment Agent"
 
-    async def process(self, state: AgentState) -> Dict[str, Any]:
+    async def process(self, state: AgentState) -> dict[str, Any]:
         """
         Process payment request based on current state.
 
@@ -62,7 +62,7 @@ class PaymentAgent:
 
         return {"action": "unknown", "message": "Unknown payment action"}
 
-    async def _create_payment(self, state: AgentState) -> Dict[str, Any]:
+    async def _create_payment(self, state: AgentState) -> dict[str, Any]:
         """Create a new payment request."""
         booking_id = state.booking_id or state.context.get("booking_id")
         amount = state.context.get("total_amount") or state.context.get("amount")
@@ -103,7 +103,7 @@ class PaymentAgent:
             "message": f"Payment request created. Amount: {amount:,} VND. {payment_info}",
         }
 
-    async def _check_payment(self, state: AgentState) -> Dict[str, Any]:
+    async def _check_payment(self, state: AgentState) -> dict[str, Any]:
         """Check payment status."""
         payment_id = state.payment_id or state.context.get("payment_id")
 
@@ -137,7 +137,7 @@ class PaymentAgent:
             "message": f"Payment status: {status}",
         }
 
-    async def _confirm_payment(self, state: AgentState) -> Dict[str, Any]:
+    async def _confirm_payment(self, state: AgentState) -> dict[str, Any]:
         """Confirm payment and update booking status."""
         payment_id = state.payment_id or state.context.get("payment_id")
 
@@ -177,7 +177,7 @@ class PaymentAgent:
             await booking_tools.update_booking_status(booking_id, "CONFIRMED")
             state.booking_status = "CONFIRMED"
 
-    async def _process_refund(self, state: AgentState) -> Dict[str, Any]:
+    async def _process_refund(self, state: AgentState) -> dict[str, Any]:
         """Process refund request (requires HITL)."""
         booking_id = state.booking_id or state.context.get("booking_id")
         amount = state.context.get("refund_amount")
@@ -199,7 +199,7 @@ class PaymentAgent:
             "message": f"Refund request for {amount:,} VND requires CSKH approval.",
         }
 
-    def _generate_payment_info(self, payment: Dict[str, Any]) -> str:
+    def _generate_payment_info(self, payment: dict[str, Any]) -> str:
         """Generate payment instructions for customer."""
         payment_method = payment.get("payment_method", "bank_transfer")
 

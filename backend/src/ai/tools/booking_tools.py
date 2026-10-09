@@ -3,14 +3,14 @@ Booking Tools - AI Tools cho domain đặt vé
 
 Kết nối: Agent -> BookingTools -> BookingService -> Database
 """
-from typing import List, Optional, Dict, Any
+from typing import Any
 from uuid import UUID
 
-from src.services.booking_service import BookingService
-from src.services.trip_service import TripService
-from src.models import BookingStatus, ActorType
+from src.models import ActorType, BookingStatus
 from src.schemas import BookingCreate
 from src.services.audit_service import AuditService
+from src.services.booking_service import BookingService
+from src.services.trip_service import TripService
 from src.utils.logger import logger
 
 
@@ -26,7 +26,7 @@ class BookingTools:
         user_id: str,
         trip_id: str,
         seat_count: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Tạo booking mới cho khách hàng.
 
@@ -124,9 +124,9 @@ class BookingTools:
     async def get_booking(
         self,
         db: Any,
-        booking_id: Optional[str] = None,
-        booking_code: Optional[str] = None
-    ) -> Dict[str, Any]:
+        booking_id: str | None = None,
+        booking_code: str | None = None
+    ) -> dict[str, Any]:
         """
         Lấy thông tin booking theo ID hoặc mã booking.
 
@@ -210,7 +210,7 @@ class BookingTools:
         self,
         db: Any,
         user_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Lấy danh sách booking của khách hàng.
 
@@ -263,7 +263,7 @@ class BookingTools:
         db: Any,
         booking_id: str,
         user_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Hủy booking (chỉ chủ booking hoặc owner).
 
@@ -343,8 +343,8 @@ class BookingTools:
     async def get_all_bookings(
         self,
         db: Any,
-        status: Optional[str] = None
-    ) -> Dict[str, Any]:
+        status: str | None = None
+    ) -> dict[str, Any]:
         """
         Lấy tất cả bookings (cho owner).
 
