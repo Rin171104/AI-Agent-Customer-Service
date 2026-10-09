@@ -12,9 +12,10 @@ Không phải Agent - chỉ là routing layer.
 """
 import re
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from src.ai.orchestrator.state import ConversationState
+from src.ai.orchestrator.intent_classifier import IntentClassifier, IntentClassification, Domain as IC_Domain
 from src.utils.logger import logger
 
 
@@ -23,6 +24,17 @@ class Domain(str, Enum):
     BOOKING = "BOOKING"
     COMPLAINT = "COMPLAINT"
     UNKNOWN = "UNKNOWN"
+
+
+# Map IntentClassifier Domain to Orchestrator Domain
+def _map_domain(ic_domain: IC_Domain) -> Domain:
+    """Map IntentClassifier Domain to Orchestrator Domain"""
+    if ic_domain == IC_Domain.BOOKING:
+        return Domain.BOOKING
+    elif ic_domain == IC_Domain.COMPLAINT:
+        return Domain.COMPLAINT
+    else:
+        return Domain.UNKNOWN
 
 
 class Orchestrator:
@@ -113,9 +125,18 @@ class Orchestrator:
         r"không.*hài.*lòng",
     ]
 
-    def __init__(self):
+    def __init__(self, use_llm_classifier: bool = False):
+        """
+        Initialize Orchestrator.
+
+        Args:
+            use_llm_classifier: If True, use LLM-based intent classification.
+                              Falls back to rule-based if LLM fails.
+        """
         self.logger = logger
         self._agents = {}
+        self.use_llm_classifier = use_llm_classifier
+        self._classifier: Optional[IntentClassifier] = None
 
     def register_agent(self, name: str, agent):
         """Register an agent"""
@@ -172,8 +193,11 @@ class Orchestrator:
         # Add customer message
         state.add_message("customer", message)
 
-        # Detect domain
-        domain = self.detect_domain(message)
+        # Detect domain - use LLM classifier if enabled
+        if self.use_llm_classifier:
+            domain = await self._detect_domain_with_llm(message, state)
+        else:
+            domain = self.detect_domain(message)
 
         self.logger.info(f"Detected domain: {domain} for message: {message[:50]}...")
 
@@ -184,6 +208,50 @@ class Orchestrator:
             return await self._handle_complaint(db, message, state)
         else:
             return await self._handle_unknown(message, state)
+
+    async def _detect_domain_with_llm(
+        self,
+        message: str,
+        state: ConversationState
+    ) -> Domain:
+        """
+        Detect domain using LLM classifier.
+
+        Falls back to rule-based if LLM fails or confidence is low.
+        """
+        # Lazy init classifier
+        if self._classifier is None:
+            self._classifier = IntentClassifier()
+
+        try:
+            # Get conversation history
+            history = state.messages[-5:] if state.messages else None
+
+            # Classify intent
+            result = await self._classifier.classify(message, history)
+
+            # Map to orchestrator domain
+            domain = _map_domain(result.domain)
+
+            # If low confidence or needs clarification, use rule-based
+            if result.needs_clarification and result.confidence < 0.7:
+                self.logger.info(
+                    f"LLM confidence low ({result.confidence}), falling back to rule-based"
+                )
+                return self.detect_domain(message)
+
+            self.logger.info(
+                f"LLM classified: {result.intent} (confidence={result.confidence})"
+            )
+
+            # Store classification result in state for debugging
+            state.intent = result.intent.value
+
+            return domain
+
+        except Exception as e:
+            self.logger.warning(f"LLM classifier error: {e}, using rule-based")
+            return self.detect_domain(message)
 
     async def _handle_booking(
         self,
