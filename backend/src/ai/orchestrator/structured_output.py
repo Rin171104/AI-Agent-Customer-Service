@@ -382,6 +382,7 @@ BOOKING_ACTIONS = [
     "create_payment",
     "check_payment",
     "get_my_bookings",
+    "search_knowledge",  # RAG - knowledge/policy queries
 ]
 
 # Schema for Booking Agent action proposal
@@ -439,6 +440,7 @@ COMPLAINT_REFUND_ACTIONS = [
     "request_refund",
     "get_refund",
     "get_my_refunds",
+    "search_knowledge",  # RAG - knowledge/policy queries
 ]
 
 # Schema for Complaint/Refund Agent action proposal
@@ -479,6 +481,53 @@ COMPLAINT_REFUND_ACTION_SCHEMA = OutputSchema(
             field_type=str,
             required=False,
             default="",
+        ),
+    ]
+)
+
+
+# ============================================================
+# RAG KNOWLEDGE QUERY SCHEMA
+# ============================================================
+
+# Supported RAG query actions
+RAG_ACTIONS = [
+    "search_knowledge",
+    "search_policy",
+    "search_faq",
+]
+
+# Schema for RAG knowledge queries
+RAG_QUERY_SCHEMA = OutputSchema(
+    fields=[
+        FieldSchema(
+            name="action",
+            field_type=str,
+            required=True,
+            enum_values=RAG_ACTIONS,
+        ),
+        FieldSchema(
+            name="query",
+            field_type=str,
+            required=True,
+        ),
+        FieldSchema(
+            name="needs_clarification",
+            field_type=bool,
+            required=False,
+            default=False,
+        ),
+        FieldSchema(
+            name="missing_info",
+            field_type=list,
+            required=False,
+            default=[],
+        ),
+        FieldSchema(
+            name="response_language",
+            field_type=str,
+            required=False,
+            default="vi",
         ),
     ]
 )

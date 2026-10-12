@@ -92,6 +92,7 @@ Nhiệm vụ: Trích xuất action và parameters từ câu của khách hàng v
 - account_number: Số tài khoản (nếu yêu cầu hoàn tiền)
 - account_holder: Tên chủ tài khoản (nếu yêu cầu hoàn tiền)
 - reason: Lý do hoàn tiền
+- query: Câu hỏi về chính sách, FAQ (dùng cho search_knowledge)
 
 **Quy tắc:**
 1. Nếu thiếu thông tin bắt buộc, đặt needs_clarification = true và liệt kê missing_info
@@ -486,6 +487,7 @@ class LLMComplaintAgent:
             "request_refund": self._handle_request_refund,
             "get_refund": self._handle_get_refund,
             "get_my_refunds": self._handle_get_my_refunds,
+            "search_knowledge": self._handle_search_knowledge,
         }
 
         handler = handler_map.get(action)
@@ -531,9 +533,19 @@ class LLMComplaintAgent:
             "request_refund": "create_refund_request",
             "get_refund": "get_refund",
             "get_my_refunds": "get_customer_refunds",
+            "search_knowledge": "search_knowledge",  # RAG - read only
         }
 
         tool_name = action_to_tool.get(action)
+
+        # Special case: search_knowledge doesn't need authorization
+        if action == "search_knowledge":
+            return {
+                "allowed": True,
+                "reason": "OK",
+                "response": "",
+            }
+
         if not tool_name:
             return {
                 "allowed": False,
@@ -653,6 +665,75 @@ class LLMComplaintAgent:
     ) -> dict[str, Any]:
         """Handle get_my_refunds action"""
         return await self._complaint_agent._handle_get_my_refunds(db, state)
+
+    async def _handle_search_knowledge(
+        self,
+        db: Any,
+        user_id: str,
+        params: dict,
+        state: ComplaintState,
+    ) -> dict[str, Any]:
+        """
+        Handle search_knowledge action.
+
+        Uses RAG to answer policy/FAQ questions about complaints and refunds.
+        Does NOT access transactional data.
+        """
+        from src.ai.rag.rag_tools import RAGTools
+
+        query = params.get("query", "")
+        lang = params.get("response_language", "vi")
+
+        if not query:
+            return {
+                "success": True,
+                "response": "Vui lòng cung cấp câu hỏi cụ thể." if lang == "vi" else "Please provide a specific question.",
+                "state": state,
+            }
+
+        rag_tools = RAGTools()
+        rag_result = rag_tools.search_knowledge(query, top_k=5)
+
+        if not rag_result.get("success"):
+            if rag_result.get("status") == "NO_KNOWLEDGE":
+                response = "Tôi chưa tìm thấy thông tin phù hợp trong dữ liệu của nhà xe." if lang == "vi" else "I couldn't find relevant information in our knowledge base."
+            elif rag_result.get("status") == "RAG_NOT_AVAILABLE":
+                response = "Hệ thống knowledge hiện không khả dụng. Vui lòng thử lại sau." if lang == "vi" else "Knowledge system is currently unavailable. Please try again later."
+            else:
+                response = "Đã có lỗi khi truy vấn thông tin." if lang == "vi" else "An error occurred while retrieving information."
+
+            return {
+                "success": True,  # Not a system error, just no data
+                "response": response,
+                "data": {"source": "RAG", "results": []},
+                "state": state,
+            }
+
+        # Format response with citations
+        context = rag_result.get("context", "")
+        sources = rag_result.get("sources", [])
+
+        if lang == "vi":
+            response = context
+        else:
+            response = context
+
+        # Add source citations
+        if sources:
+            source_list = [f"- {s.get('source', 'Unknown')}" for s in sources[:3]]
+            unique_sources = list(dict.fromkeys(source_list))
+            response += "\n\n**Nguồn / Source:**\n" + "\n".join(unique_sources)
+
+        return {
+            "success": True,
+            "response": response,
+            "data": {
+                "source": "RAG",
+                "results": rag_result.get("results", []),
+                "sources": sources,
+            },
+            "state": state,
+        }
 
     async def _handle_unknown(
         self,

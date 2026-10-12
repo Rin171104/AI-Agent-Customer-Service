@@ -69,6 +69,7 @@ Nhiệm vụ: Trích xuất action và parameters từ câu của khách hàng v
 - create_payment: Tạo thanh toán
 - check_payment: Kiểm tra trạng thái thanh toán
 - get_my_bookings: Xem danh sách booking của tôi
+- search_knowledge: Tìm kiếm thông tin chính sách, câu hỏi thường gặp
 
 **Parameters (điền thông tin có sẵn):**
 - origin: Điểm đi (hanoi, ho chi minh, da nang, da lat, ta xua, nha trang)
@@ -77,12 +78,14 @@ Nhiệm vụ: Trích xuất action và parameters từ câu của khách hàng v
 - trip_id: ID của chuyến xe
 - booking_id hoặc booking_code: Mã booking
 - seat_count: Số ghế muốn đặt (mặc định 1)
+- query: Câu hỏi về chính sách, quy trình, FAQ (dùng cho search_knowledge)
 
 **Quy tắc:**
 1. Nếu thiếu thông tin bắt buộc, đặt needs_clarification = true và liệt kê missing_info
 2. Không tự đoán ngày nếu không rõ
 3. response_language: "vi" nếu câu hỏi bằng tiếng Việt, "en" nếu bằng tiếng Anh
 4. Trả lời JSON, không giải thích thêm
+5. Dùng search_knowledge cho các câu hỏi về chính sách, quy trình, FAQ
 
 **Ví dụ:**
 
@@ -123,6 +126,32 @@ Output:
     "needs_clarification": false,
     "missing_info": [],
     "response_language": "vi",
+    "message": ""
+}
+
+Input: "chính sách hủy vé như thế nào?"
+Output:
+{
+    "action": "search_knowledge",
+    "parameters": {
+        "query": "chính sách hủy vé điều kiện phí"
+    },
+    "needs_clarification": false,
+    "missing_info": [],
+    "response_language": "vi",
+    "message": ""
+}
+
+Input: "What is the refund policy?"
+Output:
+{
+    "action": "search_knowledge",
+    "parameters": {
+        "query": "refund policy cancellation conditions"
+    },
+    "needs_clarification": false,
+    "missing_info": [],
+    "response_language": "en",
     "message": ""
 }
 
@@ -427,6 +456,7 @@ class LLMBookingAgent:
             "create_payment": self._handle_create_payment,
             "check_payment": self._handle_check_payment,
             "get_my_bookings": self._handle_get_my_bookings,
+            "search_knowledge": self._handle_search_knowledge,
         }
 
         handler = handler_map.get(action)
@@ -473,9 +503,19 @@ class LLMBookingAgent:
             "create_payment": "create_payment",
             "check_payment": "get_payment",
             "get_my_bookings": "get_user_bookings",
+            "search_knowledge": "search_knowledge",  # RAG - read only, no user data
         }
 
         tool_name = action_to_tool.get(action)
+
+        # Special case: search_knowledge doesn't need authorization
+        if action == "search_knowledge":
+            return {
+                "allowed": True,
+                "reason": "OK",
+                "response": "",
+            }
+
         if not tool_name:
             return {
                 "allowed": False,
@@ -659,6 +699,76 @@ class LLMBookingAgent:
     ) -> dict[str, Any]:
         """Handle get_my_bookings action"""
         return await self._booking_agent._handle_get_my_bookings(db, state)
+
+    async def _handle_search_knowledge(
+        self,
+        db: Any,
+        user_id: str,
+        params: dict,
+        state: BookingState,
+    ) -> dict[str, Any]:
+        """
+        Handle search_knowledge action.
+
+        Uses RAG to answer policy/FAQ questions.
+        Does NOT access transactional data.
+        """
+        from src.ai.rag.rag_tools import RAGTools
+
+        query = params.get("query", "")
+        lang = params.get("response_language", "vi")
+
+        if not query:
+            return {
+                "success": True,
+                "response": "Vui lòng cung cấp câu hỏi cụ thể." if lang == "vi" else "Please provide a specific question.",
+                "state": state,
+            }
+
+        rag_tools = RAGTools()
+        rag_result = rag_tools.search_knowledge(query, top_k=5)
+
+        if not rag_result.get("success"):
+            if rag_result.get("status") == "NO_KNOWLEDGE":
+                response = "Tôi chưa tìm thấy thông tin phù hợp trong dữ liệu của nhà xe." if lang == "vi" else "I couldn't find relevant information in our knowledge base."
+            elif rag_result.get("status") == "RAG_NOT_AVAILABLE":
+                response = "Hệ thống knowledge hiện không khả dụng. Vui lòng thử lại sau." if lang == "vi" else "Knowledge system is currently unavailable. Please try again later."
+            else:
+                response = "Đã có lỗi khi truy vấn thông tin." if lang == "vi" else "An error occurred while retrieving information."
+
+            return {
+                "success": True,  # Not a system error, just no data
+                "response": response,
+                "data": {"source": "RAG", "results": []},
+                "state": state,
+            }
+
+        # Format response with citations
+        context = rag_result.get("context", "")
+        sources = rag_result.get("sources", [])
+
+        if lang == "vi":
+            response = context
+        else:
+            # For English, we could translate context but for safety, use as-is
+            response = context
+
+        # Add source citations
+        if sources:
+            source_list = [f"- {s.get('source', 'Unknown')}" for s in sources[:3]]
+            unique_sources = list(dict.fromkeys(source_list))
+            response += "\n\n**Nguồn / Source:**\n" + "\n".join(unique_sources)
+
+        return {
+            "success": True,
+            "response": response,
+            "data": {
+                "source": "RAG",
+                "results": rag_result.get("results", []),
+                "sources": sources,
+            },
+            "state": state,
+        }
 
     async def _handle_unknown(
         self,
