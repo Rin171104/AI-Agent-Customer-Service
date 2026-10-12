@@ -166,6 +166,7 @@ class BookingTools:
 
             result = {
                 "id": str(booking.id),
+                "user_id": str(booking.user_id),  # Required for ownership verification
                 "booking_code": booking.booking_code,
                 "seat_count": booking.seat_count,
                 "total_amount": booking.total_amount,

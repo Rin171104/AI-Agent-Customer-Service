@@ -483,14 +483,23 @@ class LLMBookingAgent:
                 "response": "Action không được hỗ trợ."
             }
 
-        # If no user_context, use default CUSTOMER role for safety
+        # If no user_context, only allow public read-only operations
         if self._user_context is None:
-            # No context = assume minimal permissions
-            return {
-                "allowed": True,
-                "reason": "NO_CONTEXT_ASSUME_MINIMAL",
-                "response": "",
-            }
+            # Public operations that don't expose user data
+            public_actions = {"search_trip", "get_trip_info", "check_seats"}
+            if action in public_actions:
+                return {
+                    "allowed": True,
+                    "reason": "NO_CONTEXT_PUBLIC_OPERATION",
+                    "response": "",
+                }
+            else:
+                # Require authentication for data access
+                return {
+                    "allowed": False,
+                    "reason": "AUTHENTICATION_REQUIRED",
+                    "response": "Vui lòng đăng nhập để thực hiện chức năng này." if True else "Please log in to access this feature.",
+                }
 
         # Use ToolGuard to authorize
         from src.ai.security.tool_guard import get_tool_guard

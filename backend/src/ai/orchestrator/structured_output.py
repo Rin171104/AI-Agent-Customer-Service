@@ -425,3 +425,60 @@ BOOKING_ACTION_SCHEMA = OutputSchema(
         ),
     ]
 )
+
+
+# ============================================================
+# COMPLAINT/REFUND ACTION SCHEMA
+# ============================================================
+
+# Supported complaint/refund actions
+COMPLAINT_REFUND_ACTIONS = [
+    "create_complaint",
+    "get_complaint",
+    "get_my_complaints",
+    "request_refund",
+    "get_refund",
+    "get_my_refunds",
+]
+
+# Schema for Complaint/Refund Agent action proposal
+COMPLAINT_REFUND_ACTION_SCHEMA = OutputSchema(
+    fields=[
+        FieldSchema(
+            name="action",
+            field_type=str,
+            required=True,
+            enum_values=COMPLAINT_REFUND_ACTIONS,
+        ),
+        FieldSchema(
+            name="parameters",
+            field_type=dict,
+            required=False,
+            default={},
+        ),
+        FieldSchema(
+            name="needs_clarification",
+            field_type=bool,
+            required=False,
+            default=False,
+        ),
+        FieldSchema(
+            name="missing_info",
+            field_type=list,
+            required=False,
+            default=[],
+        ),
+        FieldSchema(
+            name="response_language",
+            field_type=str,
+            required=False,
+            default="vi",
+        ),
+        FieldSchema(
+            name="message",
+            field_type=str,
+            required=False,
+            default="",
+        ),
+    ]
+)
