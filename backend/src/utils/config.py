@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
 
+    # LLM Configuration
+    LLM_PROVIDER: str = "mock"  # Options: mock, openai, anthropic
+    LLM_MODEL: str = "gpt-4o-mini"
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    LLM_TIMEOUT_SECONDS: int = 30
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.CORS_ORIGINS = parse_list(self.CORS_ORIGINS)
